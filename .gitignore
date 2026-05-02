@@ -1,0 +1,23 @@
+__pycache__/
+*.py[cod]
+*$py.class
+
+.venv/
+venv/
+env/
+
+.pytest_cache/
+.coverage
+htmlcov/
+
+history/
+
+# Private project intelligence. Do not publish until the team decides the
+# design story and agent prompts are ready for public release.
+Conversation Between ALTON and Gemini - NXS-Go.md
+Gem_Genesis_Master_Prompt_v1.md
+G0_Genesis_Master_Prompt_v1.0.md
+G_Genesis_Master_Prompt_v1.0.md
+
+.DS_Store
+Thumbs.db
