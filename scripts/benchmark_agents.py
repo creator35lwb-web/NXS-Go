@@ -17,6 +17,7 @@ from nxs_go_ai import (
     GreedyIsolationAgent,
     RandomAgent,
     SourceGuardAgent,
+    TargetedCounterPressureAgent,
     play_match,
 )
 
@@ -32,6 +33,8 @@ def build_agent(name: str, seed: int):
         return BridgeGuardAgent()
     if name == "counter":
         return CounterRouteAgent()
+    if name == "targeted":
+        return TargetedCounterPressureAgent()
     raise ValueError(f"unknown agent: {name}")
 
 
@@ -93,6 +96,12 @@ def main() -> None:
         ("greedy", "counter"),
         ("counter", "bridge"),
         ("bridge", "counter"),
+        ("targeted", "greedy"),
+        ("greedy", "targeted"),
+        ("targeted", "bridge"),
+        ("bridge", "targeted"),
+        ("targeted", "counter"),
+        ("counter", "targeted"),
     ]
 
     for signal_name, noise_name in matchups:

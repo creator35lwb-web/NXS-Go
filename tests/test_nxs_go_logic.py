@@ -17,6 +17,7 @@ from nxs_go_ai import (
     GreedyIsolationAgent,
     NXSGoEnv,
     RandomAgent,
+    TargetedCounterPressureAgent,
     play_match,
 )
 
@@ -176,6 +177,13 @@ class NxsGoLogicTests(unittest.TestCase):
         env = NXSGoEnv()
         env.reset()
         action = CounterRouteAgent().choose_action(env)
+
+        self.assertIn(action, env.legal_actions())
+
+    def test_targeted_counter_pressure_agent_returns_legal_action(self):
+        env = NXSGoEnv()
+        env.reset()
+        action = TargetedCounterPressureAgent().choose_action(env)
 
         self.assertIn(action, env.legal_actions())
 

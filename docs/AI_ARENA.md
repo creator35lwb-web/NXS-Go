@@ -19,6 +19,7 @@ The arena is intentionally simple. It wraps the same `Game` rule engine used by 
 - `SourceGuardAgent`
 - `BridgeGuardAgent`
 - `CounterRouteAgent`
+- `TargetedCounterPressureAgent`
 - `play_match(...)`
 
 ## Example
@@ -50,6 +51,8 @@ Current hypothesis under test:
 > If bridge-aware defense can contest greedy isolation, NXS-Go already has a meaningful attack-defense cycle inside the core rules.
 
 The current follow-up hypothesis is whether active counter-routing can outperform bridge holding under the 60-turn horizon.
+
+The latest hypothesis is Targeted Counter-Pressure: defend by routing into opponent pressure sources.
 
 ## Why This Exists
 

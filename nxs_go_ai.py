@@ -458,6 +458,61 @@ class CounterRouteAgent(BridgeGuardAgent):
         return base + 1.8 * defensive_routes - 4.0 * len(pressured_nodes)
 
 
+class TargetedCounterPressureAgent(BridgeGuardAgent):
+    name = "targeted_counter_pressure"
+
+    def _candidate_actions(self, env: NXSGoEnv) -> list[Action]:
+        actions = env.legal_actions()
+        actor = env.game.current_player
+        pressure_sources = self._pressure_source_node_ids(env, actor)
+        critical_nodes = self._critical_owned_node_ids(env, actor)
+
+        def priority(action: Action) -> tuple[int, float]:
+            if action["type"] == ACTION_ROUTE:
+                if action["to_id"] in pressure_sources:
+                    return (0, 0.0)
+                if action["from_id"] in critical_nodes or action["to_id"] in critical_nodes:
+                    return (2, 0.0)
+                return (3, 0.0)
+            if action["type"] == ACTION_SYNCH and pressure_sources:
+                x = float(action["x"])
+                y = float(action["y"])
+                nearest = min(
+                    distance((x, y), env.game.node_by_id(node_id).pos)
+                    for node_id in pressure_sources
+                )
+                return (1, nearest)
+            if action["type"] == ACTION_PULSE:
+                return (4, 0.0)
+            return (5, 0.0)
+
+        return sorted(actions, key=priority)[: self.max_evaluated_actions]
+
+    def _defense_score(self, env: NXSGoEnv, actor: str) -> float:
+        base = super()._defense_score(env, actor)
+        pressure_sources = self._pressure_source_node_ids(env, actor)
+        targeted_routes = 0
+        for edge in env.game.edges:
+            if (
+                edge.route_owner == actor
+                and edge.to_id is not None
+                and edge.to_id in pressure_sources
+            ):
+                targeted_routes += 1
+        return base + 3.2 * targeted_routes - 2.0 * len(pressure_sources)
+
+    def _pressure_source_node_ids(self, env: NXSGoEnv, actor: str) -> set[int]:
+        opponent = other_player(actor)
+        sources: set[int] = set()
+        for edge in env.game.edges:
+            if edge.route_owner != opponent or edge.from_id is None or edge.to_id is None:
+                continue
+            target = env.game.node_by_id(edge.to_id)
+            if target.owner == actor:
+                sources.add(edge.from_id)
+        return sources
+
+
 def play_match(
     signal_agent: Agent,
     noise_agent: Agent,

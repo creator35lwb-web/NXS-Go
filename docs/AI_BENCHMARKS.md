@@ -19,6 +19,7 @@ When the built-in horizon is reached, the runner also reports `winner_reasons` s
 - `SourceGuardAgent`: expands near its own Source first, then falls back to greedy play.
 - `BridgeGuardAgent`: evaluates candidate actions around critical owned bridges and pressured friendly nodes.
 - `CounterRouteAgent`: extends BridgeGuard by prioritizing routes outward from pressured owned nodes.
+- `TargetedCounterPressureAgent`: routes into opponent nodes that are generating pressure.
 
 ## First Baseline Run
 
@@ -195,3 +196,46 @@ Interpretation:
 Next hypothesis:
 
 > A useful defender may need to route specifically into opponent pressure sources, not merely route out of threatened nodes.
+
+## Targeted Counter-Pressure Hypothesis
+
+Hypothesis:
+
+> Defense improves when it contests the opponent's pressure source instead of only protecting or escaping threatened nodes.
+
+Falsification signal:
+
+- If `TargetedCounterPressureAgent` does not improve against `GreedyIsolationAgent`, the route action may not currently provide enough defensive leverage.
+
+Support signal:
+
+- If it closes the Greedy margin or beats BridgeGuard/CounterRoute, targeted defensive pressure is a promising core tactic.
+
+## Targeted Counter-Pressure Probe
+
+Command:
+
+```powershell
+python scripts\benchmark_agents.py --games 2 --max-turns 60
+```
+
+Targeted-specific result summary:
+
+| Matchup | Winners | Winner reason | Average Signal margin |
+| --- | --- | --- | --- |
+| Targeted Signal vs Greedy Noise | Noise 2/2 | horizon scoring | -12.8 |
+| Greedy Signal vs Targeted Noise | Signal 2/2 | horizon scoring | 11.2 |
+| Targeted Signal vs Bridge Noise | Noise 2/2 | horizon scoring | -2.8 |
+| Bridge Signal vs Targeted Noise | Signal 2/2 | horizon scoring | 2.8 |
+| Targeted Signal vs Counter Noise | Noise 2/2 | horizon scoring | -2.0 |
+| Counter Signal vs Targeted Noise | Noise 2/2 | horizon scoring | -2.0 |
+
+Interpretation:
+
+- Targeted Counter-Pressure did not improve against GreedyIsolation.
+- Its results matched CounterRoute against Greedy and BridgeGuard in this probe.
+- The current board/action geometry may not expose enough usable counter-pressure routes.
+
+Design implication:
+
+> The core may need either better defensive route incentives or a future lightweight defensive mechanic. Do not add that mechanic yet; first test whether action selection can be improved without changing rules.

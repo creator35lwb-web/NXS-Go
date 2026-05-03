@@ -112,6 +112,8 @@ Turn-limit benchmark games include structural score leaders so experiments still
 
 Current follow-up: `CounterRouteAgent` tests whether active defensive routing can contest greedy isolation better than passive bridge holding.
 
+Latest hypothesis: `TargetedCounterPressureAgent` tests whether defense improves by routing into opponent pressure sources.
+
 ## Project Docs
 
 - `ROADMAP.md`: milestone direction from v0.1-A to v1.0
