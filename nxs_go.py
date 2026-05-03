@@ -17,6 +17,7 @@ NODE_RADIUS = 14
 SOURCE_RADIUS = 20
 MIN_NODE_SPACING = 36
 EDGE_CLICK_TOLERANCE = 12
+HORIZON_TURNS = 60
 
 BG = (12, 15, 22)
 PANEL = (23, 28, 40)
@@ -89,6 +90,8 @@ class Game:
         self.current_player = PLAYER_SIGNAL
         self.selected_action = ACTION_SYNCH
         self.winner: str | None = None
+        self.winner_reason: str | None = None
+        self.turn_count = 0
         self.show_help = True
         self.show_history = False
         self.message = "NXS-Go v0.1: preserve signal, avoid isolation."
@@ -264,6 +267,7 @@ class Game:
                 edge.to_id = None
 
     def after_action(self) -> None:
+        self.turn_count += 1
         self.rebuild_edges()
         removed = self.resolve_isolation()
         self.rebuild_edges()
@@ -313,13 +317,33 @@ class Game:
         noise_source = self.source_for(PLAYER_NOISE)
         if signal_source is None and noise_source is None:
             self.winner = "No one"
+            self.winner_reason = "source isolation"
         elif signal_source is None:
             self.winner = PLAYER_NOISE
+            self.winner_reason = "source isolation"
         elif noise_source is None:
             self.winner = PLAYER_SIGNAL
+            self.winner_reason = "source isolation"
+        elif self.turn_count >= HORIZON_TURNS:
+            evaluation = self.evaluate_position()
+            self.winner = evaluation["leader"]
+            self.winner_reason = "horizon scoring"
 
         if self.winner:
-            self.message = f"{self.winner} wins by source isolation."
+            if self.winner == "Even":
+                self.winner = "No one"
+                self.message = "Horizon reached. No one wins: the network is even."
+            elif self.winner_reason == "horizon scoring":
+                margin = self.evaluate_position()["margin"]
+                self.message = f"{self.winner} wins by horizon scoring, margin {margin}."
+                self.add_event(
+                    "Horizon scoring resolved the game.",
+                    f"After {self.turn_count} turns, no Source was isolated. "
+                    f"{self.winner} led structurally by margin {margin}. "
+                    "The horizon keeps passive survival from becoming endless.",
+                )
+            else:
+                self.message = f"{self.winner} wins by source isolation."
             self.add_log(self.message)
 
     def edge_at(self, x: float, y: float) -> Edge | None:
@@ -364,6 +388,33 @@ class Game:
             "source_connected": connected,
         }
 
+    def evaluate_player(self, owner: str) -> float:
+        opponent = other_player(owner)
+        own = self.player_stats(owner)
+        enemy = self.player_stats(opponent)
+        return (
+            float(own["live_nodes"])
+            - float(enemy["live_nodes"])
+            + 0.4 * (float(own["routes"]) - float(enemy["routes"]))
+            + (2.0 if own["source_connected"] else -4.0)
+            - (2.0 if enemy["source_connected"] else -4.0)
+        )
+
+    def evaluate_position(self) -> dict[str, object]:
+        scores = {owner: round(self.evaluate_player(owner), 2) for owner in PLAYERS}
+        margin = round(scores[PLAYER_SIGNAL] - scores[PLAYER_NOISE], 2)
+        if margin > 0:
+            leader = PLAYER_SIGNAL
+        elif margin < 0:
+            leader = PLAYER_NOISE
+        else:
+            leader = "Even"
+        return {
+            "scores": scores,
+            "leader": leader,
+            "margin": margin,
+        }
+
     def save_undo_state(self) -> None:
         self.undo_stack.append(
             {
@@ -373,6 +424,8 @@ class Game:
                 "current_player": self.current_player,
                 "selected_action": self.selected_action,
                 "winner": self.winner,
+                "winner_reason": self.winner_reason,
+                "turn_count": self.turn_count,
                 "message": self.message,
                 "log": list(self.log),
                 "history": list(self.history),
@@ -391,6 +444,8 @@ class Game:
         self.current_player = state["current_player"]  # type: ignore[assignment]
         self.selected_action = state["selected_action"]  # type: ignore[assignment]
         self.winner = state["winner"]  # type: ignore[assignment]
+        self.winner_reason = state["winner_reason"]  # type: ignore[assignment]
+        self.turn_count = state["turn_count"]  # type: ignore[assignment]
         self.message = "Undid the last completed action."
         self.log = state["log"]  # type: ignore[assignment]
         self.history = state["history"]  # type: ignore[assignment]
@@ -410,6 +465,8 @@ class Game:
             "",
             f"Saved: {datetime.now().isoformat(timespec='seconds')}",
             "",
+            f"Turns played: {self.turn_count}/{HORIZON_TURNS}",
+            "",
             "## Goal",
             "",
             "Keep your Source connected while cutting the opponent off from theirs.",
@@ -423,6 +480,17 @@ class Game:
             lines.append(
                 f"- {owner}: {stats['live_nodes']} live nodes, {stats['routes']} routes, {status}"
             )
+        evaluation = self.evaluate_position()
+        lines.extend(
+            [
+                "",
+                "## Horizon Evaluation",
+                "",
+                f"- Leader: {evaluation['leader']}",
+                f"- Margin: {evaluation['margin']}",
+                f"- Scores: {evaluation['scores']}",
+            ]
+        )
 
         lines.extend(["", "## Events", ""])
         if self.history:
@@ -595,7 +663,8 @@ def draw_status_panel(
 
     draw_text(screen, fonts["body"], "Selected Action", (22, HEIGHT - 105), TEXT)
     draw_text(screen, fonts["small"], action_hint(game.selected_action), (22, HEIGHT - 78), MUTED)
-    draw_text(screen, fonts["small"], "H help/playbook. U undo. S save history. E history.", (22, HEIGHT - 52), MUTED)
+    horizon = f"Turn {game.turn_count}/{HORIZON_TURNS}. H help/playbook. U undo. S save history. E history."
+    draw_text(screen, fonts["small"], horizon, (22, HEIGHT - 52), MUTED)
     draw_text(screen, fonts["small"], "Use top buttons or keys 1/2/3 to choose actions.", (22, HEIGHT - 29), MUTED)
 
     draw_advantage(screen, game, fonts, 515, HEIGHT - 107)
@@ -653,6 +722,7 @@ def draw_help_overlay(
         "2. ROUTE (->): click an edge touching your node to point signal.",
         "3. PULSE (!): resolve pressure. Nodes flip when incoming pressure beats defense.",
         "4. Isolation: disconnected branches go dark after every action.",
+        f"5. Horizon: after {HORIZON_TURNS} turns, the stronger living network wins.",
     ]
     for line in tutorial_lines:
         draw_text(screen, fonts["small"], line, (x, y), TEXT)

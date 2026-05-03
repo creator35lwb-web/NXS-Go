@@ -7,6 +7,7 @@ from nxs_go import (
     ACTION_ROUTE,
     ACTION_SYNCH,
     Game,
+    HORIZON_TURNS,
     PLAYER_NOISE,
     PLAYER_SIGNAL,
 )
@@ -94,6 +95,16 @@ class NxsGoLogicTests(unittest.TestCase):
         self.assertEqual(len(game.nodes), 2)
         self.assertEqual(game.current_player, PLAYER_SIGNAL)
         self.assertIsNone(game.winner)
+        self.assertEqual(game.turn_count, 0)
+
+    def test_horizon_scoring_resolves_unfinished_game(self):
+        game = Game()
+        game.turn_count = HORIZON_TURNS - 1
+
+        game.synch(250, 380)
+
+        self.assertEqual(game.winner, PLAYER_SIGNAL)
+        self.assertEqual(game.winner_reason, "horizon scoring")
 
     def test_save_history_writes_markdown_file(self):
         game = Game()
@@ -112,6 +123,7 @@ class NxsGoLogicTests(unittest.TestCase):
             content = path.read_text(encoding="utf-8")
             self.assertIn("NXS-Go Session History", content)
             self.assertIn("Final Network Status", content)
+            self.assertIn("Horizon Evaluation", content)
             self.assertIn("SYNCH", content)
         finally:
             os.chdir(cwd)
@@ -158,6 +170,7 @@ class NxsGoLogicTests(unittest.TestCase):
 
         self.assertLessEqual(result["turns"], 8)
         self.assertIn("stats", result)
+        self.assertIn("winner_reason", result)
         self.assertIn("evaluation", result)
         self.assertIn("leader", result["evaluation"])
         self.assertIn(PLAYER_SIGNAL, result["stats"])

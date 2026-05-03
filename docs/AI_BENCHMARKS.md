@@ -10,6 +10,8 @@ python scripts\benchmark_agents.py --games 5 --max-turns 30
 
 For games that hit the turn limit, the runner reports structural score leaders and Signal-vs-Noise margin so a draw-like result still carries evidence.
 
+When the built-in horizon is reached, the runner also reports `winner_reasons` so source-isolation wins can be separated from horizon-scoring wins.
+
 ## Baseline Agents
 
 - `RandomAgent`: chooses any legal action randomly.
@@ -123,3 +125,30 @@ Updated interpretation:
 - BridgeGuard delays greedy isolation but appears structurally behind after 30 turns.
 - The defense is not yet strong enough; it is buying time, not reversing pressure.
 - The next useful hypothesis is a **CounterRoute** defender that actively routes out of threatened bridges instead of only reinforcing topology.
+
+## Horizon Scoring Probe
+
+Command:
+
+```powershell
+python scripts\benchmark_agents.py --games 2 --max-turns 60
+```
+
+Horizon scoring result summary:
+
+| Matchup | Winners | Winner reason | Average Signal margin |
+| --- | --- | --- | --- |
+| Random Signal vs Greedy Noise | Noise 2/2 | source isolation | -27.6 |
+| Greedy Signal vs Random Noise | Signal 2/2 | source isolation | 35.4 |
+| Guard Signal vs Greedy Noise | Noise 2/2 | source isolation | -8.0 |
+| Greedy Signal vs Guard Noise | Signal 2/2 | source isolation | 10.0 |
+| Random Signal vs Guard Noise | Noise 2/2 | horizon scoring | -22.2 |
+| Guard Signal vs Random Noise | Signal 2/2 | horizon scoring | 22.2 |
+| Bridge Signal vs Greedy Noise | Noise 2/2 | horizon scoring | -10.8 |
+| Greedy Signal vs Bridge Noise | Signal 2/2 | horizon scoring | 9.2 |
+
+Interpretation:
+
+- Horizon Scoring successfully converts unresolved games into decisions.
+- Greedy still beats BridgeGuard structurally at the horizon.
+- The next defensive hypothesis remains CounterRoute: the defender must actively route pressure away from weak bridges.

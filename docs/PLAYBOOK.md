@@ -6,6 +6,8 @@ NXS-Go is won through connection, pressure, and isolation.
 
 Keep your Source alive while causing the opponent's network to lose connection and go dark.
 
+If neither Source falls after 60 completed turns, Horizon Scoring awards the game to the stronger living network.
+
 ## First Game
 
 1. Start the game with `python nxs_go.py`.
@@ -28,6 +30,7 @@ Build from Source -> route pressure into weak nodes -> capture bridges -> trigge
 - A route is strongest when it creates pressure on a strategic connection.
 - A capture matters most when it changes the shape of the network.
 - Isolation is more decisive than raw node count.
+- The horizon makes delay costly: if no Source falls, structure decides.
 
 ## Playtest Questions
 
@@ -35,4 +38,3 @@ Build from Source -> route pressure into weak nodes -> capture bridges -> trigge
 - Did PULSE explain why ownership changed?
 - Did blackout feel connected to your previous choices?
 - Did the winner feel clear before the final collapse?
-

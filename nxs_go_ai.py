@@ -198,31 +198,10 @@ class NXSGoEnv:
         return self.evaluate_player(player)
 
     def evaluate_player(self, player: str) -> float:
-        opponent = other_player(player)
-        own = self.game.player_stats(player)
-        enemy = self.game.player_stats(opponent)
-        return (
-            float(own["live_nodes"])
-            - float(enemy["live_nodes"])
-            + 0.4 * (float(own["routes"]) - float(enemy["routes"]))
-            + (2.0 if own["source_connected"] else -4.0)
-            - (2.0 if enemy["source_connected"] else -4.0)
-        )
+        return self.game.evaluate_player(player)
 
     def evaluate_position(self) -> dict[str, Any]:
-        scores = {owner: round(self.evaluate_player(owner), 2) for owner in PLAYERS}
-        margin = round(scores[PLAYER_SIGNAL] - scores[PLAYER_NOISE], 2)
-        if margin > 0:
-            leader = PLAYER_SIGNAL
-        elif margin < 0:
-            leader = PLAYER_NOISE
-        else:
-            leader = "Even"
-        return {
-            "scores": scores,
-            "leader": leader,
-            "margin": margin,
-        }
+        return self.game.evaluate_position()
 
     def _terminal_reward(self, player: str) -> float:
         if self.game.winner == player:
@@ -455,6 +434,7 @@ def play_match(
 
     return {
         "winner": arena.game.winner,
+        "winner_reason": arena.game.winner_reason,
         "turns": turns,
         "turn_limit_reached": arena.game.winner is None and turns >= max_turns,
         "stats": {owner: arena.game.player_stats(owner) for owner in PLAYERS},

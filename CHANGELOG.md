@@ -9,6 +9,7 @@
 - Added baseline benchmark runner and first benchmark notes.
 - Added BridgeGuard benchmark hypothesis and agent.
 - Added structural scoring for turn-limit AI benchmark games.
+- Added Horizon Scoring as a finite 60-turn game rule.
 
 ## v0.1-A Public Baseline
 

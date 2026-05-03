@@ -8,7 +8,7 @@ NXS-Go is a local-first abstract strategy game about connection, pressure, and i
 
 Two players build living networks from their Sources. They route pressure through edges, capture weak points, and try to trigger isolation. A branch that loses connection to its Source goes dark.
 
-Current status: **v0.1-A public baseline**.
+Current status: **v0.2 AI Arena experiments**.
 
 ## v0.1 Scope
 
@@ -81,6 +81,8 @@ The game does not use points yet. For v0.1-A, advantage is shown as network stru
 - whether the Source is still connected
 
 You win by keeping your Source alive while making the opponent's Source/network go dark.
+
+If neither Source is isolated after 60 completed turns, Horizon Scoring awards the game to the structurally stronger living network.
 
 ## Test
 
