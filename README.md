@@ -8,6 +8,8 @@ NXS-Go is a local-first abstract strategy game about connection, pressure, and i
 
 Two players build living networks from their Sources. They route pressure through edges, capture weak points, and try to trigger isolation. A branch that loses connection to its Source goes dark.
 
+The board uses a 2.5D depth-field view: the rules remain graph-based, while shadows, perspective lines, and visual layering make network depth easier to read.
+
 Current status: **v0.2 AI Arena experiments**.
 
 ## v0.1 Scope

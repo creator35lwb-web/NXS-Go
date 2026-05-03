@@ -12,6 +12,7 @@
 - Added Horizon Scoring as a finite 60-turn game rule.
 - Added CounterRoute active-defense hypothesis agent.
 - Added Targeted Counter-Pressure hypothesis agent.
+- Added 2.5D depth-field board rendering to improve network readability.
 
 ## v0.1-A Public Baseline
 

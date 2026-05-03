@@ -2,6 +2,8 @@
 
 NXS-Go is won through connection, pressure, and isolation.
 
+The current board is a 2.5D depth-field view. Nodes and edges still use the same rules, but visual depth helps you read pressure and connection more naturally.
+
 ## Goal
 
 Keep your Source alive while causing the opponent's network to lose connection and go dark.

@@ -18,6 +18,8 @@ SOURCE_RADIUS = 20
 MIN_NODE_SPACING = 36
 EDGE_CLICK_TOLERANCE = 12
 HORIZON_TURNS = 60
+BOARD_TOP = 68
+BOARD_BOTTOM = HEIGHT - 122
 
 BG = (12, 15, 22)
 PANEL = (23, 28, 40)
@@ -597,6 +599,7 @@ def draw_button(
 def draw_game(screen: pygame.Surface, game: Game, fonts: dict[str, pygame.font.Font]) -> None:
     screen.fill(BG)
     draw_top_bar(screen, game, fonts)
+    draw_depth_field(screen)
     draw_graph(screen, game)
     draw_status_panel(screen, game, fonts)
     if game.show_help:
@@ -629,23 +632,49 @@ def draw_top_bar(screen: pygame.Surface, game: Game, fonts: dict[str, pygame.fon
 
 
 def draw_graph(screen: pygame.Surface, game: Game) -> None:
-    for edge in game.edges:
+    for edge in sorted(game.edges, key=lambda item: edge_depth(game, item)):
         a = game.node_by_id(edge.a)
         b = game.node_by_id(edge.b)
-        pygame.draw.line(screen, EDGE_ACTIVE if edge.route_owner else EDGE, a.pos, b.pos, 2)
+        depth = (node_depth(a) + node_depth(b)) / 2
+        shadow_offset = 2 + int(depth * 5)
+        width = 1 + int(depth * 2)
+        shadow_color = (5, 7, 12)
+        pygame.draw.line(
+            screen,
+            shadow_color,
+            (a.pos[0] + shadow_offset, a.pos[1] + shadow_offset),
+            (b.pos[0] + shadow_offset, b.pos[1] + shadow_offset),
+            width + 2,
+        )
+        color = EDGE_ACTIVE if edge.route_owner else EDGE
+        pygame.draw.line(screen, depth_color(color, depth), a.pos, b.pos, width)
 
     for edge in game.edges:
         if edge.route_owner and edge.from_id is not None and edge.to_id is not None:
             start = game.node_by_id(edge.from_id)
             end = game.node_by_id(edge.to_id)
-            draw_arrow(screen, game.owner_color(edge.route_owner), start.pos, end.pos, width=4)
+            depth = (node_depth(start) + node_depth(end)) / 2
+            draw_arrow(
+                screen,
+                depth_color(game.owner_color(edge.route_owner), depth),
+                start.pos,
+                end.pos,
+                width=3 + int(depth * 2),
+            )
 
-    for node in game.nodes:
+    for node in sorted(game.nodes, key=lambda item: item.y):
+        depth = node_depth(node)
+        radius = depth_radius(SOURCE_RADIUS if node.is_source else NODE_RADIUS, depth)
+        shadow_offset = 4 + int(depth * 7)
+        shadow_rect = pygame.Rect(0, 0, radius * 2 + 12, max(6, radius // 2 + 6))
+        shadow_rect.center = (node.pos[0] + shadow_offset, node.pos[1] + shadow_offset)
+        pygame.draw.ellipse(screen, (3, 5, 10), shadow_rect)
         if not node.active:
-            pygame.draw.circle(screen, (34, 39, 50), node.pos, NODE_RADIUS, 1)
+            pygame.draw.circle(screen, (34, 39, 50), node.pos, radius, 1)
             continue
-        color = game.owner_color(node.owner)
-        radius = SOURCE_RADIUS if node.is_source else NODE_RADIUS
+        color = depth_color(game.owner_color(node.owner), depth)
+        glow = depth_color(color, min(1.0, depth + 0.25))
+        pygame.draw.circle(screen, glow, node.pos, radius + 5, 1)
         pygame.draw.circle(screen, color, node.pos, radius)
         pygame.draw.circle(screen, BG, node.pos, radius, 2)
         if node.is_source:
@@ -691,6 +720,39 @@ def draw_advantage(
         status = "Source connected" if stats["source_connected"] else "Source dark"
         text = f"{owner}: {stats['live_nodes']} live nodes, {stats['routes']} routes, {status}"
         draw_text(screen, fonts["small"], text, (x, y + 27 + idx * 24), color)
+
+
+def draw_depth_field(screen: pygame.Surface) -> None:
+    pygame.draw.rect(screen, (10, 13, 20), pygame.Rect(0, BOARD_TOP, WIDTH, BOARD_BOTTOM - BOARD_TOP))
+    vanishing = (WIDTH // 2, BOARD_TOP + 24)
+    floor_color = (24, 31, 46)
+    pygame.draw.line(screen, (45, 55, 75), (0, BOARD_TOP), (WIDTH, BOARD_TOP), 1)
+    for idx in range(1, 9):
+        t = idx / 9
+        y = int(BOARD_TOP + (BOARD_BOTTOM - BOARD_TOP) * (t * t))
+        pygame.draw.line(screen, floor_color, (0, y), (WIDTH, y), 1)
+    for x in range(-160, WIDTH + 161, 160):
+        pygame.draw.line(screen, floor_color, vanishing, (x, BOARD_BOTTOM), 1)
+    pygame.draw.line(screen, (33, 42, 61), (0, BOARD_BOTTOM), (WIDTH, BOARD_BOTTOM), 1)
+
+
+def node_depth(node: Node) -> float:
+    return max(0.0, min(1.0, (node.y - BOARD_TOP) / (BOARD_BOTTOM - BOARD_TOP)))
+
+
+def edge_depth(game: Game, edge: Edge) -> float:
+    a = game.node_by_id(edge.a)
+    b = game.node_by_id(edge.b)
+    return (node_depth(a) + node_depth(b)) / 2
+
+
+def depth_radius(base: int, depth: float) -> int:
+    return int(base * (0.86 + depth * 0.24))
+
+
+def depth_color(color: tuple[int, int, int], depth: float) -> tuple[int, int, int]:
+    factor = 0.78 + depth * 0.28
+    return tuple(min(255, int(channel * factor)) for channel in color)
 
 
 def draw_help_overlay(
