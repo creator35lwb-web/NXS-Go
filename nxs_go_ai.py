@@ -304,6 +304,119 @@ class SourceGuardAgent:
         return self.fallback.choose_action(env)
 
 
+class BridgeGuardAgent:
+    name = "bridge_guard"
+
+    def __init__(self, max_evaluated_actions: int = 80) -> None:
+        self.max_evaluated_actions = max_evaluated_actions
+
+    def choose_action(self, env: NXSGoEnv) -> Action:
+        actions = self._candidate_actions(env)
+        if not actions:
+            return {"type": ACTION_PULSE}
+
+        actor = env.game.current_player
+        best_action = actions[0]
+        best_score = float("-inf")
+        for action in actions:
+            trial = env.clone()
+            result = trial.step(action)
+            score = result.reward + self._defense_score(trial, actor)
+            if score > best_score:
+                best_score = score
+                best_action = action
+        return best_action
+
+    def _candidate_actions(self, env: NXSGoEnv) -> list[Action]:
+        actions = env.legal_actions()
+        actor = env.game.current_player
+        critical_nodes = self._critical_owned_node_ids(env, actor)
+
+        def priority(action: Action) -> tuple[int, float]:
+            if action["type"] == ACTION_PULSE:
+                return (3, 0.0)
+            if action["type"] == ACTION_ROUTE:
+                if action["from_id"] in critical_nodes or action["to_id"] in critical_nodes:
+                    return (0, 0.0)
+                return (2, 0.0)
+            if critical_nodes:
+                x = float(action["x"])
+                y = float(action["y"])
+                nearest = min(
+                    distance((x, y), env.game.node_by_id(node_id).pos)
+                    for node_id in critical_nodes
+                )
+                return (1, nearest)
+            return (1, 0.0)
+
+        return sorted(actions, key=priority)[: self.max_evaluated_actions]
+
+    def _defense_score(self, env: NXSGoEnv, actor: str) -> float:
+        game = env.game
+        source = game.source_for(actor)
+        if source is None:
+            return -50.0
+
+        connected = game.connected_owned_ids(source.id, actor)
+        critical_nodes = self._critical_owned_node_ids(env, actor)
+        pressured_nodes = self._pressured_owned_node_ids(env, actor)
+        stats = game.player_stats(actor)
+
+        return (
+            2.0 * len(connected)
+            + 1.2 * float(stats["routes"])
+            - 2.4 * len(critical_nodes)
+            - 3.0 * len(pressured_nodes)
+        )
+
+    def _critical_owned_node_ids(self, env: NXSGoEnv, actor: str) -> set[int]:
+        game = env.game
+        source = game.source_for(actor)
+        if source is None:
+            return set()
+
+        owned = [
+            node
+            for node in game.active_nodes()
+            if node.owner == actor and not node.is_source
+        ]
+        critical: set[int] = set()
+        baseline = game.connected_owned_ids(source.id, actor)
+
+        for node in owned:
+            original_active = node.active
+            node.active = False
+            game.rebuild_edges()
+            reduced = game.connected_owned_ids(source.id, actor)
+            if len(reduced) < len(baseline) - 1:
+                critical.add(node.id)
+            node.active = original_active
+            game.rebuild_edges()
+
+        return critical
+
+    def _pressured_owned_node_ids(self, env: NXSGoEnv, actor: str) -> set[int]:
+        opponent = other_player(actor)
+        pressured: set[int] = set()
+        for node in env.game.active_nodes():
+            if node.owner != actor:
+                continue
+            incoming = sum(
+                1
+                for edge in env.game.edges
+                if edge.route_owner == opponent and edge.to_id == node.id
+            )
+            outgoing = sum(
+                1
+                for edge in env.game.edges
+                if edge.route_owner == actor and edge.from_id == node.id
+            )
+            defense = outgoing + (2 if node.is_source else 0)
+            if incoming >= defense:
+                pressured.add(node.id)
+        return pressured
+
+
 def play_match(
     signal_agent: Agent,
     noise_agent: Agent,

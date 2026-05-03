@@ -11,7 +11,13 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from nxs_go import PLAYER_NOISE, PLAYER_SIGNAL
-from nxs_go_ai import GreedyIsolationAgent, RandomAgent, SourceGuardAgent, play_match
+from nxs_go_ai import (
+    BridgeGuardAgent,
+    GreedyIsolationAgent,
+    RandomAgent,
+    SourceGuardAgent,
+    play_match,
+)
 
 
 def build_agent(name: str, seed: int):
@@ -21,6 +27,8 @@ def build_agent(name: str, seed: int):
         return GreedyIsolationAgent()
     if name == "guard":
         return SourceGuardAgent()
+    if name == "bridge":
+        return BridgeGuardAgent()
     raise ValueError(f"unknown agent: {name}")
 
 
@@ -64,6 +72,10 @@ def main() -> None:
         ("greedy", "guard"),
         ("random", "guard"),
         ("guard", "random"),
+        ("bridge", "greedy"),
+        ("greedy", "bridge"),
+        ("bridge", "guard"),
+        ("guard", "bridge"),
     ]
 
     for signal_name, noise_name in matchups:

@@ -16,6 +16,7 @@ The arena is intentionally simple. It wraps the same `Game` rule engine used by 
 - `RandomAgent`
 - `GreedyIsolationAgent`
 - `SourceGuardAgent`
+- `BridgeGuardAgent`
 - `play_match(...)`
 
 ## Example
@@ -36,6 +37,10 @@ python scripts\benchmark_agents.py --games 5 --max-turns 30
 
 See `docs/AI_BENCHMARKS.md` for early results.
 
+Current hypothesis under test:
+
+> If bridge-aware defense can contest greedy isolation, NXS-Go already has a meaningful attack-defense cycle inside the core rules.
+
 ## Why This Exists
 
 The long-term goal is to make NXS-Go measurable by intelligent play, not only human intuition.
@@ -45,6 +50,7 @@ Useful questions:
 - Can random play discover meaningful structure?
 - Can a greedy bridge/isolation agent dominate too easily?
 - Does source defense beat pressure?
+- Does bridge defense create a real attack-defense cycle?
 - Are games ending by strategic isolation or by accidental collapse?
 - Does adding future mechanics increase depth or only complexity?
 

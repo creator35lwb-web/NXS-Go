@@ -104,6 +104,8 @@ Run a small baseline benchmark:
 python scripts\benchmark_agents.py --games 5 --max-turns 30
 ```
 
+The current AI hypothesis is whether bridge-aware defense can contest greedy isolation pressure.
+
 ## Project Docs
 
 - `ROADMAP.md`: milestone direction from v0.1-A to v1.0

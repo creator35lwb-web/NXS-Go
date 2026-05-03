@@ -7,6 +7,7 @@
 - Added AI Arena documentation.
 - Added tests for legal actions, environment stepping, and bounded baseline matches.
 - Added baseline benchmark runner and first benchmark notes.
+- Added BridgeGuard benchmark hypothesis and agent.
 
 ## v0.1-A Public Baseline
 
