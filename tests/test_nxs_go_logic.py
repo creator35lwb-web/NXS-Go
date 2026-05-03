@@ -10,6 +10,7 @@ from nxs_go import (
     PLAYER_NOISE,
     PLAYER_SIGNAL,
 )
+from nxs_go_ai import GreedyIsolationAgent, NXSGoEnv, RandomAgent, play_match
 
 
 class NxsGoLogicTests(unittest.TestCase):
@@ -116,6 +117,40 @@ class NxsGoLogicTests(unittest.TestCase):
             os.chdir(cwd)
             if test_output.exists() and test_output.name == ".test_history_output":
                 shutil.rmtree(test_output)
+
+    def test_ai_env_exposes_initial_observation_and_legal_actions(self):
+        env = NXSGoEnv()
+        observation = env.reset()
+        actions = env.legal_actions()
+
+        self.assertEqual(observation["current_player"], PLAYER_SIGNAL)
+        self.assertEqual(len(observation["nodes"]), 2)
+        self.assertTrue(any(action["type"] == ACTION_SYNCH for action in actions))
+
+    def test_ai_env_step_advances_turn_with_synch(self):
+        env = NXSGoEnv()
+        env.reset()
+        action = next(action for action in env.legal_actions() if action["type"] == ACTION_SYNCH)
+
+        result = env.step(action)
+
+        self.assertFalse(result.done)
+        self.assertEqual(result.observation["current_player"], PLAYER_NOISE)
+        self.assertEqual(len(result.observation["nodes"]), 3)
+
+    def test_greedy_agent_returns_legal_action(self):
+        env = NXSGoEnv()
+        env.reset()
+        action = GreedyIsolationAgent().choose_action(env)
+
+        self.assertIn(action, env.legal_actions())
+
+    def test_baseline_agents_can_play_bounded_match(self):
+        result = play_match(RandomAgent(seed=7), GreedyIsolationAgent(), max_turns=8)
+
+        self.assertLessEqual(result["turns"], 8)
+        self.assertIn("stats", result)
+        self.assertIn(PLAYER_SIGNAL, result["stats"])
 
 
 if __name__ == "__main__":

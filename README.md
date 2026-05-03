@@ -90,12 +90,21 @@ Run the core logic tests:
 python -m unittest discover -s tests
 ```
 
+## AI Arena
+
+NXS-Go includes an early agent-facing environment in `nxs_go_ai.py`.
+
+It exposes legal actions, observations, rewards, and baseline bots so the game can be tested by simple agents before future self-play work.
+
+See `docs/AI_ARENA.md`.
+
 ## Project Docs
 
 - `ROADMAP.md`: milestone direction from v0.1-A to v1.0
 - `CONTRIBUTING.md`: contribution guide and design rule
 - `SECURITY.md`: local-first security and privacy policy
 - `docs/ARCHITECTURE.md`: current code structure and rule boundary
+- `docs/AI_ARENA.md`: agent interface and baseline bot direction
 - `docs/PLAYBOOK.md`: first-game guidance and winning pattern
 - `LICENSE`: MIT license
 

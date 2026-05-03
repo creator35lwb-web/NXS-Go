@@ -19,9 +19,19 @@ Goal: improve readability and decision quality after the core loop is clear.
 - Add screenshots and example sessions.
 - Capture balance notes from playtests.
 
-## v0.2: Asymmetric Abilities
+## v0.2: AI Arena
 
-Goal: add identity only after the base loop teaches itself.
+Goal: make NXS-Go testable by bots, agents, and future self-play systems.
+
+- Formalize legal actions, observations, rewards, and terminal states.
+- Add baseline bots: random, source defense, and greedy isolation.
+- Run bounded self-play tests.
+- Use Gemma-family open-source models as the first LLM-agent target.
+- Measure whether simple agents solve the current rule set too easily.
+
+## v0.3: Asymmetric Abilities
+
+Goal: add identity only after the base loop and AI arena reveal real strategic gaps.
 
 - Prototype Signal Amplify.
 - Prototype Noise Ghost Node.
@@ -36,4 +46,3 @@ Goal: make NXS-Go easy for people to run locally, study, modify, and share.
 - Contributor guide.
 - Architecture notes.
 - Packaged release instructions.
-
