@@ -4,6 +4,8 @@ NXS-Go is won through connection, pressure, and isolation.
 
 The current board is a 2.5D depth-field view. Nodes and edges still use the same rules, but visual depth helps you read pressure and connection more naturally.
 
+Use `[` and `]` to adjust the tilt view when dense defensive clusters hide bridges. Hover over an edge to highlight its endpoints before routing.
+
 ## Goal
 
 Keep your Source alive while causing the opponent's network to lose connection and go dark.
@@ -33,6 +35,7 @@ Build from Source -> route pressure into weak nodes -> capture bridges -> trigge
 - A capture matters most when it changes the shape of the network.
 - Isolation is more decisive than raw node count.
 - The horizon makes delay costly: if no Source falls, structure decides.
+- Dense clusters can hide bridges. Use tilt and hover inspection before choosing ROUTE.
 
 ## Playtest Questions
 

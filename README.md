@@ -47,10 +47,11 @@ python nxs_go.py
 - `2`: select ROUTE
 - `3`: select PULSE
 - `Space`: execute PULSE
+- `[` / `]`: lower/raise 2.5D tilt view
 - `R`: reset
 - `Esc`: quit
 
-Use the mouse to place nodes or select edges.
+Use the mouse to place nodes or select edges. Hover over an edge to inspect the route bridge before clicking.
 
 ## First Play
 

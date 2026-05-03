@@ -20,6 +20,9 @@ EDGE_CLICK_TOLERANCE = 12
 HORIZON_TURNS = 60
 BOARD_TOP = 68
 BOARD_BOTTOM = HEIGHT - 122
+MIN_VIEW_TILT = 0.25
+MAX_VIEW_TILT = 1.0
+VIEW_TILT_STEP = 0.075
 
 BG = (12, 15, 22)
 PANEL = (23, 28, 40)
@@ -94,6 +97,7 @@ class Game:
         self.winner: str | None = None
         self.winner_reason: str | None = None
         self.turn_count = 0
+        self.view_tilt = 0.62
         self.show_help = True
         self.show_history = False
         self.message = "NXS-Go v0.1: preserve signal, avoid isolation."
@@ -510,6 +514,10 @@ class Game:
     def reset(self) -> None:
         self.__init__()
 
+    def adjust_view_tilt(self, delta: float) -> None:
+        self.view_tilt = max(MIN_VIEW_TILT, min(MAX_VIEW_TILT, self.view_tilt + delta))
+        self.message = f"View tilt {int(self.view_tilt * 100)}%. Use [ or ] to adjust."
+
 
 def other_player(player: str) -> str:
     return PLAYER_NOISE if player == PLAYER_SIGNAL else PLAYER_SIGNAL
@@ -599,7 +607,7 @@ def draw_button(
 def draw_game(screen: pygame.Surface, game: Game, fonts: dict[str, pygame.font.Font]) -> None:
     screen.fill(BG)
     draw_top_bar(screen, game, fonts)
-    draw_depth_field(screen)
+    draw_depth_field(screen, game)
     draw_graph(screen, game)
     draw_status_panel(screen, game, fonts)
     if game.show_help:
@@ -632,10 +640,13 @@ def draw_top_bar(screen: pygame.Surface, game: Game, fonts: dict[str, pygame.fon
 
 
 def draw_graph(screen: pygame.Surface, game: Game) -> None:
+    mouse_pos = pygame.mouse.get_pos()
+    hovered_edge = game.edge_at(*mouse_pos) if BOARD_TOP <= mouse_pos[1] <= BOARD_BOTTOM else None
+
     for edge in sorted(game.edges, key=lambda item: edge_depth(game, item)):
         a = game.node_by_id(edge.a)
         b = game.node_by_id(edge.b)
-        depth = (node_depth(a) + node_depth(b)) / 2
+        depth = visual_depth(game, (node_depth(a) + node_depth(b)) / 2)
         shadow_offset = 2 + int(depth * 5)
         width = 1 + int(depth * 2)
         shadow_color = (5, 7, 12)
@@ -647,13 +658,16 @@ def draw_graph(screen: pygame.Surface, game: Game) -> None:
             width + 2,
         )
         color = EDGE_ACTIVE if edge.route_owner else EDGE
+        if edge == hovered_edge or route_edge_is_available(game, edge):
+            color = GOLD if edge == hovered_edge else depth_color(EDGE_ACTIVE, depth)
+            width += 1
         pygame.draw.line(screen, depth_color(color, depth), a.pos, b.pos, width)
 
     for edge in game.edges:
         if edge.route_owner and edge.from_id is not None and edge.to_id is not None:
             start = game.node_by_id(edge.from_id)
             end = game.node_by_id(edge.to_id)
-            depth = (node_depth(start) + node_depth(end)) / 2
+            depth = visual_depth(game, (node_depth(start) + node_depth(end)) / 2)
             draw_arrow(
                 screen,
                 depth_color(game.owner_color(edge.route_owner), depth),
@@ -663,7 +677,7 @@ def draw_graph(screen: pygame.Surface, game: Game) -> None:
             )
 
     for node in sorted(game.nodes, key=lambda item: item.y):
-        depth = node_depth(node)
+        depth = visual_depth(game, node_depth(node))
         radius = depth_radius(SOURCE_RADIUS if node.is_source else NODE_RADIUS, depth)
         shadow_offset = 4 + int(depth * 7)
         shadow_rect = pygame.Rect(0, 0, radius * 2 + 12, max(6, radius // 2 + 6))
@@ -680,6 +694,9 @@ def draw_graph(screen: pygame.Surface, game: Game) -> None:
         if node.is_source:
             pygame.draw.circle(screen, GOLD, node.pos, radius + 5, 2)
 
+    if hovered_edge is not None:
+        draw_edge_inspector(screen, game, hovered_edge)
+
 
 def draw_status_panel(
     screen: pygame.Surface,
@@ -692,7 +709,7 @@ def draw_status_panel(
 
     draw_text(screen, fonts["body"], "Selected Action", (22, HEIGHT - 105), TEXT)
     draw_text(screen, fonts["small"], action_hint(game.selected_action), (22, HEIGHT - 78), MUTED)
-    horizon = f"Turn {game.turn_count}/{HORIZON_TURNS}. H help/playbook. U undo. S save history. E history."
+    horizon = f"Turn {game.turn_count}/{HORIZON_TURNS}. Tilt [/] {int(game.view_tilt * 100)}%. H help. E history."
     draw_text(screen, fonts["small"], horizon, (22, HEIGHT - 52), MUTED)
     draw_text(screen, fonts["small"], "Use top buttons or keys 1/2/3 to choose actions.", (22, HEIGHT - 29), MUTED)
 
@@ -722,14 +739,15 @@ def draw_advantage(
         draw_text(screen, fonts["small"], text, (x, y + 27 + idx * 24), color)
 
 
-def draw_depth_field(screen: pygame.Surface) -> None:
+def draw_depth_field(screen: pygame.Surface, game: Game) -> None:
     pygame.draw.rect(screen, (10, 13, 20), pygame.Rect(0, BOARD_TOP, WIDTH, BOARD_BOTTOM - BOARD_TOP))
-    vanishing = (WIDTH // 2, BOARD_TOP + 24)
+    vanishing = (WIDTH // 2, int(BOARD_TOP + 16 + (1.0 - game.view_tilt) * 90))
     floor_color = (24, 31, 46)
     pygame.draw.line(screen, (45, 55, 75), (0, BOARD_TOP), (WIDTH, BOARD_TOP), 1)
     for idx in range(1, 9):
         t = idx / 9
-        y = int(BOARD_TOP + (BOARD_BOTTOM - BOARD_TOP) * (t * t))
+        curve = t ** (1.15 + game.view_tilt * 1.2)
+        y = int(BOARD_TOP + (BOARD_BOTTOM - BOARD_TOP) * curve)
         pygame.draw.line(screen, floor_color, (0, y), (WIDTH, y), 1)
     for x in range(-160, WIDTH + 161, 160):
         pygame.draw.line(screen, floor_color, vanishing, (x, BOARD_BOTTOM), 1)
@@ -746,6 +764,10 @@ def edge_depth(game: Game, edge: Edge) -> float:
     return (node_depth(a) + node_depth(b)) / 2
 
 
+def visual_depth(game: Game, depth: float) -> float:
+    return max(0.0, min(1.0, depth * (0.72 + game.view_tilt * 0.42)))
+
+
 def depth_radius(base: int, depth: float) -> int:
     return int(base * (0.86 + depth * 0.24))
 
@@ -753,6 +775,27 @@ def depth_radius(base: int, depth: float) -> int:
 def depth_color(color: tuple[int, int, int], depth: float) -> tuple[int, int, int]:
     factor = 0.78 + depth * 0.28
     return tuple(min(255, int(channel * factor)) for channel in color)
+
+
+def route_edge_is_available(game: Game, edge: Edge) -> bool:
+    if game.selected_action != ACTION_ROUTE:
+        return False
+    try:
+        a_node = game.node_by_id(edge.a)
+        b_node = game.node_by_id(edge.b)
+    except KeyError:
+        return False
+    return a_node.owner == game.current_player or b_node.owner == game.current_player
+
+
+def draw_edge_inspector(screen: pygame.Surface, game: Game, edge: Edge) -> None:
+    a = game.node_by_id(edge.a)
+    b = game.node_by_id(edge.b)
+    midpoint = ((a.pos[0] + b.pos[0]) // 2, (a.pos[1] + b.pos[1]) // 2)
+    color = GOLD if route_edge_is_available(game, edge) else MUTED
+    pygame.draw.circle(screen, color, midpoint, 8, 2)
+    pygame.draw.circle(screen, color, a.pos, depth_radius(NODE_RADIUS, visual_depth(game, node_depth(a))) + 7, 2)
+    pygame.draw.circle(screen, color, b.pos, depth_radius(NODE_RADIUS, visual_depth(game, node_depth(b))) + 7, 2)
 
 
 def draw_help_overlay(
@@ -812,7 +855,7 @@ def draw_help_overlay(
     draw_text(screen, fonts["body"], "Controls", (x, y), GOLD)
     y += 25
     control_lines = [
-        "1/2/3 choose actions. Space pulses. U undo. E history. S save. R reset. Esc quit.",
+        "1/2/3 choose actions. Space pulses. [/] tilt view. U undo. E history. S save. R reset. Esc quit.",
     ]
     for line in control_lines:
         for wrapped in wrap_text(line, fonts["small"], 640):
@@ -939,6 +982,10 @@ def main() -> None:
                     game.show_help = not game.show_help
                 elif event.key == pygame.K_e:
                     game.show_history = not game.show_history
+                elif event.key == pygame.K_LEFTBRACKET:
+                    game.adjust_view_tilt(-VIEW_TILT_STEP)
+                elif event.key == pygame.K_RIGHTBRACKET:
+                    game.adjust_view_tilt(VIEW_TILT_STEP)
                 elif event.key == pygame.K_1:
                     game.selected_action = ACTION_SYNCH
                     game.message = action_hint(ACTION_SYNCH)
