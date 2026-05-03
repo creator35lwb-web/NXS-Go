@@ -85,6 +85,7 @@ class NXSGoEnv:
                 for edge in self.game.edges
             ],
             "stats": {owner: self.game.player_stats(owner) for owner in PLAYERS},
+            "evaluation": self.evaluate_position(),
         }
 
     def legal_actions(self) -> list[Action]:
@@ -194,6 +195,9 @@ class NXSGoEnv:
         return None
 
     def _score(self, player: str) -> float:
+        return self.evaluate_player(player)
+
+    def evaluate_player(self, player: str) -> float:
         opponent = other_player(player)
         own = self.game.player_stats(player)
         enemy = self.game.player_stats(opponent)
@@ -204,6 +208,21 @@ class NXSGoEnv:
             + (2.0 if own["source_connected"] else -4.0)
             - (2.0 if enemy["source_connected"] else -4.0)
         )
+
+    def evaluate_position(self) -> dict[str, Any]:
+        scores = {owner: round(self.evaluate_player(owner), 2) for owner in PLAYERS}
+        margin = round(scores[PLAYER_SIGNAL] - scores[PLAYER_NOISE], 2)
+        if margin > 0:
+            leader = PLAYER_SIGNAL
+        elif margin < 0:
+            leader = PLAYER_NOISE
+        else:
+            leader = "Even"
+        return {
+            "scores": scores,
+            "leader": leader,
+            "margin": margin,
+        }
 
     def _terminal_reward(self, player: str) -> float:
         if self.game.winner == player:
@@ -439,5 +458,6 @@ def play_match(
         "turns": turns,
         "turn_limit_reached": arena.game.winner is None and turns >= max_turns,
         "stats": {owner: arena.game.player_stats(owner) for owner in PLAYERS},
+        "evaluation": arena.evaluate_position(),
         "history": list(arena.game.history),
     }

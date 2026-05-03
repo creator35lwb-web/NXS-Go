@@ -8,6 +8,8 @@ The benchmark runner is intentionally small:
 python scripts\benchmark_agents.py --games 5 --max-turns 30
 ```
 
+For games that hit the turn limit, the runner reports structural score leaders and Signal-vs-Noise margin so a draw-like result still carries evidence.
+
 ## Baseline Agents
 
 - `RandomAgent`: chooses any legal action randomly.
@@ -88,3 +90,36 @@ Early interpretation:
 - Bridge-aware defense stopped the greedy isolation agent from producing the quick 28-29 turn wins it found against passive SourceGuard.
 - This supports, but does not prove, the attack-defense cycle hypothesis.
 - The next probe should extend turn limits and add final-position evaluation so turn-limit games can still be scored meaningfully.
+
+## Structural Scoring
+
+Turn-limit games are scored by a lightweight structural evaluator:
+
+- live node advantage
+- route advantage
+- Source connectivity
+
+The score is not a replacement for winning by Source isolation. It is a diagnostic tool for experiments.
+
+## Structural Scoring Probe
+
+Command:
+
+```powershell
+python scripts\benchmark_agents.py --games 3 --max-turns 30
+```
+
+BridgeGuard-specific score summary:
+
+| Matchup | Winner result | Score leader | Average Signal margin |
+| --- | --- | --- | --- |
+| Bridge Signal vs Greedy Noise | 3/3 reached turn limit | Noise 3/3 | -10.8 |
+| Greedy Signal vs Bridge Noise | 3/3 reached turn limit | Signal 3/3 | 9.2 |
+| Bridge Signal vs Guard Noise | 3/3 reached turn limit | Noise 3/3 | -27.2 |
+| Guard Signal vs Bridge Noise | 3/3 reached turn limit | Signal 3/3 | 27.2 |
+
+Updated interpretation:
+
+- BridgeGuard delays greedy isolation but appears structurally behind after 30 turns.
+- The defense is not yet strong enough; it is buying time, not reversing pressure.
+- The next useful hypothesis is a **CounterRoute** defender that actively routes out of threatened bridges instead of only reinforcing topology.

@@ -106,6 +106,8 @@ python scripts\benchmark_agents.py --games 5 --max-turns 30
 
 The current AI hypothesis is whether bridge-aware defense can contest greedy isolation pressure.
 
+Turn-limit benchmark games include structural score leaders so experiments still produce evidence when no Source is isolated.
+
 ## Project Docs
 
 - `ROADMAP.md`: milestone direction from v0.1-A to v1.0

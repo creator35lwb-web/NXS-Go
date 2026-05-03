@@ -12,6 +12,7 @@ The arena is intentionally simple. It wraps the same `Game` rule engine used by 
 - `legal_actions()`
 - `step(action)`
 - `observation()`
+- `evaluate_position()`
 - `reset()`
 - `RandomAgent`
 - `GreedyIsolationAgent`
@@ -36,6 +37,12 @@ python scripts\benchmark_agents.py --games 5 --max-turns 30
 ```
 
 See `docs/AI_BENCHMARKS.md` for early results.
+
+Turn-limit games report a structural evaluation:
+
+- score leader
+- Signal-vs-Noise margin
+- live nodes, routes, and Source connectivity
 
 Current hypothesis under test:
 

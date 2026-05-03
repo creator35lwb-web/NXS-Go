@@ -8,6 +8,7 @@
 - Added tests for legal actions, environment stepping, and bounded baseline matches.
 - Added baseline benchmark runner and first benchmark notes.
 - Added BridgeGuard benchmark hypothesis and agent.
+- Added structural scoring for turn-limit AI benchmark games.
 
 ## v0.1-A Public Baseline
 

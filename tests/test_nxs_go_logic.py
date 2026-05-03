@@ -125,6 +125,7 @@ class NxsGoLogicTests(unittest.TestCase):
 
         self.assertEqual(observation["current_player"], PLAYER_SIGNAL)
         self.assertEqual(len(observation["nodes"]), 2)
+        self.assertEqual(observation["evaluation"]["leader"], "Even")
         self.assertTrue(any(action["type"] == ACTION_SYNCH for action in actions))
 
     def test_ai_env_step_advances_turn_with_synch(self):
@@ -157,6 +158,8 @@ class NxsGoLogicTests(unittest.TestCase):
 
         self.assertLessEqual(result["turns"], 8)
         self.assertIn("stats", result)
+        self.assertIn("evaluation", result)
+        self.assertIn("leader", result["evaluation"])
         self.assertIn(PLAYER_SIGNAL, result["stats"])
 
 

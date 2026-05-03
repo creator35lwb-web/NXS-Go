@@ -34,8 +34,10 @@ def build_agent(name: str, seed: int):
 
 def run_series(signal_name: str, noise_name: str, games: int, max_turns: int) -> dict[str, object]:
     winners: Counter[str] = Counter()
+    leaders: Counter[str] = Counter()
     total_turns = 0
     turn_limits = 0
+    total_margin = 0.0
 
     for idx in range(games):
         result = play_match(
@@ -45,6 +47,9 @@ def run_series(signal_name: str, noise_name: str, games: int, max_turns: int) ->
         )
         winner = result["winner"] or "TurnLimit"
         winners[winner] += 1
+        evaluation = result["evaluation"]
+        leaders[str(evaluation["leader"])] += 1
+        total_margin += float(evaluation["margin"])
         total_turns += int(result["turns"])
         if result["turn_limit_reached"]:
             turn_limits += 1
@@ -54,8 +59,10 @@ def run_series(signal_name: str, noise_name: str, games: int, max_turns: int) ->
         "games": games,
         "max_turns": max_turns,
         "winners": dict(winners),
+        "score_leaders": dict(leaders),
         "turn_limits": turn_limits,
         "average_turns": round(total_turns / games, 2),
+        "average_signal_margin": round(total_margin / games, 2),
     }
 
 
