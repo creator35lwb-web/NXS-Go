@@ -28,6 +28,14 @@ print(result["winner"])
 print(result["stats"])
 ```
 
+Run the baseline benchmark:
+
+```powershell
+python scripts\benchmark_agents.py --games 5 --max-turns 30
+```
+
+See `docs/AI_BENCHMARKS.md` for early results.
+
 ## Why This Exists
 
 The long-term goal is to make NXS-Go measurable by intelligent play, not only human intuition.
@@ -53,4 +61,3 @@ The first Gemma-style experiment should be conservative:
 5. Compare against baseline bots.
 
 Do not optimize for a strong AI immediately. First prove that agents can understand the action space and produce legal moves consistently.
-

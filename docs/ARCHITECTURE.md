@@ -6,6 +6,7 @@ NXS-Go is currently a single-file Pygame prototype with focused unit tests aroun
 
 - `nxs_go.py` owns the game loop, rendering, input handling, and game state.
 - `nxs_go_ai.py` wraps the same rule engine for agent testing and self-play experiments.
+- `scripts/benchmark_agents.py` runs small baseline-agent matchups.
 - `requirements.txt` keeps runtime dependencies minimal.
 - The game is local-first and does not use network services.
 

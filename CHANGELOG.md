@@ -6,6 +6,7 @@
 - Added baseline agents for random play, source guarding, and greedy isolation.
 - Added AI Arena documentation.
 - Added tests for legal actions, environment stepping, and bounded baseline matches.
+- Added baseline benchmark runner and first benchmark notes.
 
 ## v0.1-A Public Baseline
 

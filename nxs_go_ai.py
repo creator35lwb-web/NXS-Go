@@ -44,8 +44,9 @@ class Agent(Protocol):
 class NXSGoEnv:
     """Deterministic agent-facing wrapper around the current NXS-Go rule engine."""
 
-    def __init__(self, synch_angles: int = 12) -> None:
+    def __init__(self, synch_angles: int = 8, max_synch_actions: int = 24) -> None:
         self.synch_angles = synch_angles
+        self.max_synch_actions = max_synch_actions
         self.game = Game()
 
     def reset(self) -> dict[str, Any]:
@@ -54,7 +55,7 @@ class NXSGoEnv:
         return self.observation()
 
     def clone(self) -> "NXSGoEnv":
-        cloned = NXSGoEnv(self.synch_angles)
+        cloned = NXSGoEnv(self.synch_angles, self.max_synch_actions)
         cloned.game = copy.deepcopy(self.game)
         return cloned
 
@@ -151,7 +152,12 @@ class NXSGoEnv:
                     seen.add(key)
                     candidates.append({"type": ACTION_SYNCH, "x": round(x, 2), "y": round(y, 2)})
 
-        return candidates
+        opponent_source = self.game.source_for(other_player(player))
+        if opponent_source is not None:
+            candidates.sort(
+                key=lambda action: distance((action["x"], action["y"]), opponent_source.pos)
+            )
+        return candidates[: self.max_synch_actions]
 
     def _legal_route_actions(self, player: str) -> list[Action]:
         actions: list[Action] = []
@@ -223,8 +229,11 @@ class RandomAgent:
 class GreedyIsolationAgent:
     name = "greedy_isolation"
 
+    def __init__(self, max_evaluated_actions: int = 80) -> None:
+        self.max_evaluated_actions = max_evaluated_actions
+
     def choose_action(self, env: NXSGoEnv) -> Action:
-        actions = env.legal_actions()
+        actions = self._candidate_actions(env)
         if not actions:
             return {"type": ACTION_PULSE}
 
@@ -239,6 +248,24 @@ class GreedyIsolationAgent:
                 best_score = score
                 best_action = action
         return best_action
+
+    def _candidate_actions(self, env: NXSGoEnv) -> list[Action]:
+        actions = env.legal_actions()
+        opponent_source = env.game.source_for(other_player(env.game.current_player))
+
+        def priority(action: Action) -> tuple[int, float]:
+            if action["type"] == ACTION_PULSE:
+                return (0, 0.0)
+            if action["type"] == ACTION_ROUTE:
+                target = env.game.node_by_id(action["to_id"])
+                if target.owner == other_player(env.game.current_player):
+                    return (1, 0.0 if target.is_source else 1.0)
+                return (2, 0.0)
+            if opponent_source is not None:
+                return (3, distance((action["x"], action["y"]), opponent_source.pos))
+            return (3, 0.0)
+
+        return sorted(actions, key=priority)[: self.max_evaluated_actions]
 
     def _bridge_pressure_bonus(self, env: NXSGoEnv, actor: str) -> float:
         opponent = other_player(actor)
@@ -261,6 +288,9 @@ class GreedyIsolationAgent:
 class SourceGuardAgent:
     name = "source_guard"
 
+    def __init__(self, fallback: GreedyIsolationAgent | None = None) -> None:
+        self.fallback = fallback or GreedyIsolationAgent(max_evaluated_actions=40)
+
     def choose_action(self, env: NXSGoEnv) -> Action:
         actions = env.legal_actions()
         synch_actions = [action for action in actions if action["type"] == ACTION_SYNCH]
@@ -271,7 +301,7 @@ class SourceGuardAgent:
                     synch_actions,
                     key=lambda action: distance((action["x"], action["y"]), source.pos),
                 )
-        return GreedyIsolationAgent().choose_action(env)
+        return self.fallback.choose_action(env)
 
 
 def play_match(
@@ -294,6 +324,7 @@ def play_match(
     return {
         "winner": arena.game.winner,
         "turns": turns,
+        "turn_limit_reached": arena.game.winner is None and turns >= max_turns,
         "stats": {owner: arena.game.player_stats(owner) for owner in PLAYERS},
         "history": list(arena.game.history),
     }

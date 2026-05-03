@@ -98,6 +98,12 @@ It exposes legal actions, observations, rewards, and baseline bots so the game c
 
 See `docs/AI_ARENA.md`.
 
+Run a small baseline benchmark:
+
+```powershell
+python scripts\benchmark_agents.py --games 5 --max-turns 30
+```
+
 ## Project Docs
 
 - `ROADMAP.md`: milestone direction from v0.1-A to v1.0
@@ -105,6 +111,7 @@ See `docs/AI_ARENA.md`.
 - `SECURITY.md`: local-first security and privacy policy
 - `docs/ARCHITECTURE.md`: current code structure and rule boundary
 - `docs/AI_ARENA.md`: agent interface and baseline bot direction
+- `docs/AI_BENCHMARKS.md`: early baseline-agent results
 - `docs/PLAYBOOK.md`: first-game guidance and winning pattern
 - `LICENSE`: MIT license
 
