@@ -18,6 +18,7 @@ The arena is intentionally simple. It wraps the same `Game` rule engine used by 
 - `GreedyIsolationAgent`
 - `SourceGuardAgent`
 - `BridgeGuardAgent`
+- `CounterRouteAgent`
 - `play_match(...)`
 
 ## Example
@@ -47,6 +48,8 @@ Turn-limit games report a structural evaluation:
 Current hypothesis under test:
 
 > If bridge-aware defense can contest greedy isolation, NXS-Go already has a meaningful attack-defense cycle inside the core rules.
+
+The current follow-up hypothesis is whether active counter-routing can outperform bridge holding under the 60-turn horizon.
 
 ## Why This Exists
 

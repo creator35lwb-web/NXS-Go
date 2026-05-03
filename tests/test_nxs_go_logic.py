@@ -11,7 +11,14 @@ from nxs_go import (
     PLAYER_NOISE,
     PLAYER_SIGNAL,
 )
-from nxs_go_ai import BridgeGuardAgent, GreedyIsolationAgent, NXSGoEnv, RandomAgent, play_match
+from nxs_go_ai import (
+    BridgeGuardAgent,
+    CounterRouteAgent,
+    GreedyIsolationAgent,
+    NXSGoEnv,
+    RandomAgent,
+    play_match,
+)
 
 
 class NxsGoLogicTests(unittest.TestCase):
@@ -162,6 +169,13 @@ class NxsGoLogicTests(unittest.TestCase):
         env = NXSGoEnv()
         env.reset()
         action = BridgeGuardAgent().choose_action(env)
+
+        self.assertIn(action, env.legal_actions())
+
+    def test_counter_route_agent_returns_legal_action(self):
+        env = NXSGoEnv()
+        env.reset()
+        action = CounterRouteAgent().choose_action(env)
 
         self.assertIn(action, env.legal_actions())
 

@@ -110,6 +110,8 @@ The current AI hypothesis is whether bridge-aware defense can contest greedy iso
 
 Turn-limit benchmark games include structural score leaders so experiments still produce evidence when no Source is isolated.
 
+Current follow-up: `CounterRouteAgent` tests whether active defensive routing can contest greedy isolation better than passive bridge holding.
+
 ## Project Docs
 
 - `ROADMAP.md`: milestone direction from v0.1-A to v1.0

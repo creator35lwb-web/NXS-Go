@@ -18,6 +18,7 @@ When the built-in horizon is reached, the runner also reports `winner_reasons` s
 - `GreedyIsolationAgent`: evaluates bounded candidate actions and prefers immediate reward plus bridge pressure.
 - `SourceGuardAgent`: expands near its own Source first, then falls back to greedy play.
 - `BridgeGuardAgent`: evaluates candidate actions around critical owned bridges and pressured friendly nodes.
+- `CounterRouteAgent`: extends BridgeGuard by prioritizing routes outward from pressured owned nodes.
 
 ## First Baseline Run
 
@@ -152,3 +153,45 @@ Interpretation:
 - Horizon Scoring successfully converts unresolved games into decisions.
 - Greedy still beats BridgeGuard structurally at the horizon.
 - The next defensive hypothesis remains CounterRoute: the defender must actively route pressure away from weak bridges.
+
+## CounterRoute Hypothesis
+
+Hypothesis:
+
+> A defender that actively routes outward from pressured nodes should perform better than one that only preserves bridge topology.
+
+Falsification signal:
+
+- If `CounterRouteAgent` still loses structurally to `GreedyIsolationAgent` at the horizon, the current defensive action language may be too weak.
+
+Support signal:
+
+- If `CounterRouteAgent` closes the margin or wins against `GreedyIsolationAgent`, then defense can be active inside the current rules.
+
+## CounterRoute Probe
+
+Command:
+
+```powershell
+python scripts\benchmark_agents.py --games 2 --max-turns 60
+```
+
+CounterRoute-specific result summary:
+
+| Matchup | Winners | Winner reason | Average Signal margin |
+| --- | --- | --- | --- |
+| Counter Signal vs Greedy Noise | Noise 2/2 | horizon scoring | -12.8 |
+| Greedy Signal vs Counter Noise | Signal 2/2 | horizon scoring | 11.2 |
+| Counter Signal vs Bridge Noise | Noise 2/2 | horizon scoring | -2.8 |
+| Bridge Signal vs Counter Noise | Signal 2/2 | horizon scoring | 2.8 |
+
+Interpretation:
+
+- CounterRoute did not beat GreedyIsolation.
+- In this probe, CounterRoute performed slightly worse than BridgeGuard against GreedyIsolation.
+- CounterRoute and BridgeGuard are close against each other.
+- Active routing needs sharper pressure logic; simply routing outward is not enough.
+
+Next hypothesis:
+
+> A useful defender may need to route specifically into opponent pressure sources, not merely route out of threatened nodes.

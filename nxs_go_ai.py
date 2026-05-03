@@ -415,6 +415,49 @@ class BridgeGuardAgent:
         return pressured
 
 
+class CounterRouteAgent(BridgeGuardAgent):
+    name = "counter_route"
+
+    def _candidate_actions(self, env: NXSGoEnv) -> list[Action]:
+        actions = env.legal_actions()
+        actor = env.game.current_player
+        pressured_nodes = self._pressured_owned_node_ids(env, actor)
+        critical_nodes = self._critical_owned_node_ids(env, actor)
+
+        def priority(action: Action) -> tuple[int, float]:
+            if action["type"] == ACTION_ROUTE:
+                if action["from_id"] in pressured_nodes:
+                    return (0, 0.0)
+                if action["from_id"] in critical_nodes or action["to_id"] in critical_nodes:
+                    return (1, 0.0)
+                return (3, 0.0)
+            if action["type"] == ACTION_SYNCH and (pressured_nodes or critical_nodes):
+                x = float(action["x"])
+                y = float(action["y"])
+                targets = pressured_nodes or critical_nodes
+                nearest = min(
+                    distance((x, y), env.game.node_by_id(node_id).pos)
+                    for node_id in targets
+                )
+                return (2, nearest)
+            if action["type"] == ACTION_PULSE:
+                return (4, 0.0)
+            return (5, 0.0)
+
+        return sorted(actions, key=priority)[: self.max_evaluated_actions]
+
+    def _defense_score(self, env: NXSGoEnv, actor: str) -> float:
+        base = super()._defense_score(env, actor)
+        pressured_nodes = self._pressured_owned_node_ids(env, actor)
+        defensive_routes = 0
+        for edge in env.game.edges:
+            if edge.route_owner == actor and edge.from_id is not None:
+                from_node = env.game.node_by_id(edge.from_id)
+                if from_node.owner == actor:
+                    defensive_routes += 1
+        return base + 1.8 * defensive_routes - 4.0 * len(pressured_nodes)
+
+
 def play_match(
     signal_agent: Agent,
     noise_agent: Agent,
