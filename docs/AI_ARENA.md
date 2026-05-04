@@ -9,6 +9,7 @@ The arena is intentionally simple. It wraps the same `Game` rule engine used by 
 `nxs_go_ai.py` exposes:
 
 - `NXSGoEnv`
+- `MAP_VARIANTS`
 - `legal_actions()`
 - `step(action)`
 - `observation()`
@@ -36,6 +37,12 @@ Run the baseline benchmark:
 
 ```powershell
 python scripts\benchmark_agents.py --games 5 --max-turns 30
+```
+
+Run all benchmark map variants:
+
+```powershell
+python scripts\benchmark_agents.py --map all --games 2 --max-turns 60
 ```
 
 See `docs/AI_BENCHMARKS.md` for early results.

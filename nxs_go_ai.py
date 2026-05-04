@@ -24,6 +24,7 @@ from nxs_go import (
 
 
 Action = dict[str, Any]
+MAP_VARIANTS = ("default", "wide_sources", "neutral_bridge")
 
 
 @dataclass(frozen=True)
@@ -44,18 +45,27 @@ class Agent(Protocol):
 class NXSGoEnv:
     """Deterministic agent-facing wrapper around the current NXS-Go rule engine."""
 
-    def __init__(self, synch_angles: int = 8, max_synch_actions: int = 24) -> None:
+    def __init__(
+        self,
+        synch_angles: int = 8,
+        max_synch_actions: int = 24,
+        map_variant: str = "default",
+    ) -> None:
+        if map_variant not in MAP_VARIANTS:
+            raise ValueError(f"unknown map variant: {map_variant}")
         self.synch_angles = synch_angles
         self.max_synch_actions = max_synch_actions
+        self.map_variant = map_variant
         self.game = Game()
 
     def reset(self) -> dict[str, Any]:
         self.game = Game()
         self.game.show_help = False
+        self._apply_map_variant()
         return self.observation()
 
     def clone(self) -> "NXSGoEnv":
-        cloned = NXSGoEnv(self.synch_angles, self.max_synch_actions)
+        cloned = NXSGoEnv(self.synch_angles, self.max_synch_actions, self.map_variant)
         cloned.game = copy.deepcopy(self.game)
         return cloned
 
@@ -86,7 +96,27 @@ class NXSGoEnv:
             ],
             "stats": {owner: self.game.player_stats(owner) for owner in PLAYERS},
             "evaluation": self.evaluate_position(),
+            "map_variant": self.map_variant,
         }
+
+    def _apply_map_variant(self) -> None:
+        if self.map_variant == "default":
+            return
+        if self.map_variant == "wide_sources":
+            signal = self.game.source_for(PLAYER_SIGNAL)
+            noise = self.game.source_for(PLAYER_NOISE)
+            if signal is not None:
+                signal.x = 115
+            if noise is not None:
+                noise.x = WIDTH - 115
+            self.game.rebuild_edges()
+            return
+        if self.map_variant == "neutral_bridge":
+            self.game.add_node(390, HEIGHT // 2 - 72, PLAYER_SIGNAL)
+            self.game.add_node(560, HEIGHT // 2, PLAYER_SIGNAL)
+            self.game.add_node(730, HEIGHT // 2 + 72, PLAYER_NOISE)
+            self.game.rebuild_edges()
+            return
 
     def legal_actions(self) -> list[Action]:
         if self.game.winner:
@@ -518,8 +548,9 @@ def play_match(
     noise_agent: Agent,
     max_turns: int = 120,
     env: NXSGoEnv | None = None,
+    map_variant: str = "default",
 ) -> dict[str, Any]:
-    arena = env or NXSGoEnv()
+    arena = env or NXSGoEnv(map_variant=map_variant)
     arena.reset()
     agents = {PLAYER_SIGNAL: signal_agent, PLAYER_NOISE: noise_agent}
     turns = 0
@@ -538,4 +569,5 @@ def play_match(
         "stats": {owner: arena.game.player_stats(owner) for owner in PLAYERS},
         "evaluation": arena.evaluate_position(),
         "history": list(arena.game.history),
+        "map_variant": arena.map_variant,
     }

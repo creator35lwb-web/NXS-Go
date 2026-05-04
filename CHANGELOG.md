@@ -14,6 +14,7 @@
 - Added Targeted Counter-Pressure hypothesis agent.
 - Added 2.5D depth-field board rendering to improve network readability.
 - Added adjustable tilt controls and route hover inspection for dense clusters.
+- Added AI Arena map variants for geometry/search experiments.
 
 ## v0.1-A Public Baseline
 

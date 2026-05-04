@@ -15,6 +15,7 @@ from nxs_go_ai import (
     BridgeGuardAgent,
     CounterRouteAgent,
     GreedyIsolationAgent,
+    MAP_VARIANTS,
     RandomAgent,
     SourceGuardAgent,
     TargetedCounterPressureAgent,
@@ -38,7 +39,13 @@ def build_agent(name: str, seed: int):
     raise ValueError(f"unknown agent: {name}")
 
 
-def run_series(signal_name: str, noise_name: str, games: int, max_turns: int) -> dict[str, object]:
+def run_series(
+    signal_name: str,
+    noise_name: str,
+    games: int,
+    max_turns: int,
+    map_variant: str,
+) -> dict[str, object]:
     winners: Counter[str] = Counter()
     reasons: Counter[str] = Counter()
     leaders: Counter[str] = Counter()
@@ -51,6 +58,7 @@ def run_series(signal_name: str, noise_name: str, games: int, max_turns: int) ->
             build_agent(signal_name, seed=idx + 1),
             build_agent(noise_name, seed=10_000 + idx),
             max_turns=max_turns,
+            map_variant=map_variant,
         )
         winner = result["winner"] or "TurnLimit"
         winners[winner] += 1
@@ -64,6 +72,7 @@ def run_series(signal_name: str, noise_name: str, games: int, max_turns: int) ->
 
     return {
         "matchup": f"{signal_name}({PLAYER_SIGNAL}) vs {noise_name}({PLAYER_NOISE})",
+        "map": map_variant,
         "games": games,
         "max_turns": max_turns,
         "winners": dict(winners),
@@ -79,6 +88,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Run NXS-Go baseline agent benchmarks.")
     parser.add_argument("--games", type=int, default=10)
     parser.add_argument("--max-turns", type=int, default=40)
+    parser.add_argument(
+        "--map",
+        choices=MAP_VARIANTS + ("all",),
+        default="default",
+        help="Benchmark map variant.",
+    )
     args = parser.parse_args()
 
     matchups = [
@@ -104,9 +119,11 @@ def main() -> None:
         ("counter", "targeted"),
     ]
 
-    for signal_name, noise_name in matchups:
-        result = run_series(signal_name, noise_name, args.games, args.max_turns)
-        print(json.dumps(result, sort_keys=True))
+    maps = MAP_VARIANTS if args.map == "all" else (args.map,)
+    for map_variant in maps:
+        for signal_name, noise_name in matchups:
+            result = run_series(signal_name, noise_name, args.games, args.max_turns, map_variant)
+            print(json.dumps(result, sort_keys=True))
 
 
 if __name__ == "__main__":

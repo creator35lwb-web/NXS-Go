@@ -15,6 +15,7 @@ from nxs_go_ai import (
     BridgeGuardAgent,
     CounterRouteAgent,
     GreedyIsolationAgent,
+    MAP_VARIANTS,
     NXSGoEnv,
     RandomAgent,
     TargetedCounterPressureAgent,
@@ -144,6 +145,7 @@ class NxsGoLogicTests(unittest.TestCase):
         actions = env.legal_actions()
 
         self.assertEqual(observation["current_player"], PLAYER_SIGNAL)
+        self.assertEqual(observation["map_variant"], "default")
         self.assertEqual(len(observation["nodes"]), 2)
         self.assertEqual(observation["evaluation"]["leader"], "Even")
         self.assertTrue(any(action["type"] == ACTION_SYNCH for action in actions))
@@ -196,6 +198,15 @@ class NxsGoLogicTests(unittest.TestCase):
         self.assertIn("evaluation", result)
         self.assertIn("leader", result["evaluation"])
         self.assertIn(PLAYER_SIGNAL, result["stats"])
+
+    def test_ai_env_map_variants_reset(self):
+        for variant in MAP_VARIANTS:
+            with self.subTest(variant=variant):
+                env = NXSGoEnv(map_variant=variant)
+                observation = env.reset()
+                self.assertEqual(observation["map_variant"], variant)
+                self.assertGreaterEqual(len(observation["nodes"]), 2)
+                self.assertTrue(env.legal_actions())
 
 
 if __name__ == "__main__":

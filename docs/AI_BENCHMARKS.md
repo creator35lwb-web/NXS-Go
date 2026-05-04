@@ -8,6 +8,18 @@ The benchmark runner is intentionally small:
 python scripts\benchmark_agents.py --games 5 --max-turns 30
 ```
 
+Use `--map` to run geometry variants:
+
+```powershell
+python scripts\benchmark_agents.py --map all --games 2 --max-turns 60
+```
+
+Current map variants:
+
+- `default`: current baseline.
+- `wide_sources`: Sources start farther apart.
+- `neutral_bridge`: seeded middle bridge structure for early interaction.
+
 For games that hit the turn limit, the runner reports structural score leaders and Signal-vs-Noise margin so a draw-like result still carries evidence.
 
 When the built-in horizon is reached, the runner also reports `winner_reasons` so source-isolation wins can be separated from horizon-scoring wins.
@@ -239,3 +251,35 @@ Interpretation:
 Design implication:
 
 > The core may need either better defensive route incentives or a future lightweight defensive mechanic. Do not add that mechanic yet; first test whether action selection can be improved without changing rules.
+
+## Geometry Variant Probe
+
+Command:
+
+```powershell
+python scripts\benchmark_agents.py --map all --games 1 --max-turns 60
+```
+
+Defensive-vs-Greedy result summary:
+
+| Map | Matchup | Winner | Reason | Signal margin |
+| --- | --- | --- | --- | --- |
+| default | Bridge Signal vs Greedy Noise | Noise | horizon scoring | -10.8 |
+| default | Counter Signal vs Greedy Noise | Noise | horizon scoring | -12.8 |
+| default | Targeted Signal vs Greedy Noise | Noise | horizon scoring | -12.8 |
+| wide_sources | Bridge Signal vs Greedy Noise | Noise | horizon scoring | -12.8 |
+| wide_sources | Counter Signal vs Greedy Noise | Noise | horizon scoring | -12.8 |
+| wide_sources | Targeted Signal vs Greedy Noise | Noise | horizon scoring | -12.8 |
+| neutral_bridge | Bridge Signal vs Greedy Noise | Noise | horizon scoring | -10.8 |
+| neutral_bridge | Counter Signal vs Greedy Noise | Noise | horizon scoring | -12.8 |
+| neutral_bridge | Targeted Signal vs Greedy Noise | Noise | horizon scoring | -12.8 |
+
+Interpretation:
+
+- The initial map variants did not meaningfully improve defensive outcomes against GreedyIsolation.
+- Wide source spacing did not help defense in this one-game probe.
+- The seeded middle bridge did not create enough defensive leverage.
+
+Next geometry/search question:
+
+> Do we need richer benchmark maps with contested neutral-like bridge lanes, or is the current route/defense action space too weak?
