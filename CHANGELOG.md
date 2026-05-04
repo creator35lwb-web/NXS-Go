@@ -19,6 +19,7 @@
 - Added a focused benchmark `--suite defense` option.
 - Added TacticalDefense one-ply search agent and benchmark notes.
 - Optimized AI Arena rollouts by disabling undo/history recording and using lightweight state cloning.
+- Added human playtest guide and GitHub playtest feedback issue template.
 
 ## v0.1-A Public Baseline
 

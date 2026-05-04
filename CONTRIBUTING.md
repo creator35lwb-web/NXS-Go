@@ -4,6 +4,8 @@ NXS-Go is a local-first abstract strategy game about connection, pressure, and i
 
 The current project priority is v0.1-A clarity playtesting. Contributions should help new players understand the game before adding new mechanics.
 
+Human playtest feedback is especially valuable now. See `docs/HUMAN_PLAYTEST.md` and use the GitHub **Human Playtest Feedback** issue template.
+
 ## Good First Contributions
 
 - Improve onboarding, help text, or the playbook.
@@ -34,4 +36,3 @@ New features should preserve that thesis.
 - Keep changes focused.
 - Explain how the change improves player clarity, reliability, or open-source readiness.
 - Avoid adding new mechanics until v0.1-A onboarding and playtest clarity are stable.
-

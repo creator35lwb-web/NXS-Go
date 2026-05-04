@@ -29,6 +29,16 @@ Goal: make NXS-Go testable by bots, agents, future self-play systems, and human 
 - Test board geometry and search variants before changing rules.
 - Improve route readability through 2.5D tilt, hover inspection, and future camera prototypes.
 
+## v0.2-H: Human Competition Playtest
+
+Goal: test whether humans understand, challenge, adapt, and want rematches before broad AI-agent review.
+
+- Add a human playtest guide.
+- Add GitHub playtest feedback issue template.
+- Test local hotseat best-of-3 sets.
+- Capture feedback on clarity, tension, readability, decisive moves, and rematch desire.
+- Treat AI-agent expert review as stronger only after early human value signals.
+
 ## v0.3: LLM Agent Trial
 
 Goal: test whether an open-source LLM agent can understand state, choose legal actions, and explain decisions.

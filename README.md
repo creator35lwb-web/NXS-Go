@@ -12,6 +12,8 @@ The board uses a 2.5D depth-field view: the rules remain graph-based, while shad
 
 Current status: **v0.2 AI Arena experiments**.
 
+Human playtest status: **controlled local hotseat feedback wanted**.
+
 ## v0.1 Scope
 
 The first playable prototype focuses on the core loop:
@@ -68,6 +70,14 @@ If a branch loses connection to its Source, it goes dark.
 Press `S` any time to save the session history as a Markdown file. The saved history is useful for reviewing how a move created pressure, capture, or isolation.
 
 For a more detailed guide, see `docs/PLAYBOOK.md`.
+
+## Human Playtest
+
+NXS-Go needs human competition feedback before broad AI-agent review.
+
+Run a local hotseat best-of-3 set, then open a GitHub issue with the **Human Playtest Feedback** template.
+
+See `docs/HUMAN_PLAYTEST.md`.
 
 ## Winning Pattern
 
@@ -137,6 +147,7 @@ The AI Arena is designed for CPU-first development. Focused benchmarks do not re
 - `docs/ARCHITECTURE.md`: current code structure and rule boundary
 - `docs/AI_ARENA.md`: agent interface and baseline bot direction
 - `docs/AI_BENCHMARKS.md`: early baseline-agent results
+- `docs/HUMAN_PLAYTEST.md`: local human playtest guide and feedback questions
 - `docs/PLAYBOOK.md`: first-game guidance and winning pattern
 - `LICENSE`: MIT license
 

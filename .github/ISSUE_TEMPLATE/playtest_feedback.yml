@@ -1,0 +1,75 @@
+name: Human Playtest Feedback
+description: Share feedback after a local NXS-Go human playtest.
+title: "[Playtest]: "
+labels: ["playtest", "human-feedback"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for testing NXS-Go. Please focus on clarity, tension, readability, and whether you wanted a rematch.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      description: Paste the commit hash or describe when you downloaded the repo.
+      placeholder: "Example: main at 355e1ec"
+    validations:
+      required: false
+  - type: dropdown
+    id: players
+    attributes:
+      label: Player experience
+      options:
+        - Two first-time players
+        - One repeat player, one first-time player
+        - Two repeat players
+        - Solo self-test
+    validations:
+      required: true
+  - type: textarea
+    id: summary
+    attributes:
+      label: Playtest summary
+      description: What happened in the match or best-of-3 set?
+      placeholder: "Signal won by isolating a bridge after..."
+    validations:
+      required: true
+  - type: textarea
+    id: clarity
+    attributes:
+      label: Clarity feedback
+      description: What was clear or confusing?
+      placeholder: "We understood SYNCH, but ROUTE direction was confusing because..."
+    validations:
+      required: true
+  - type: textarea
+    id: competition
+    attributes:
+      label: Competition and rematch feel
+      description: Did the game make players want to adapt and play again?
+      placeholder: "After losing, Noise wanted to rematch because..."
+    validations:
+      required: true
+  - type: textarea
+    id: readability
+    attributes:
+      label: Board readability
+      description: Were routes, bridges, captures, or dark nodes hard to see?
+      placeholder: "The dense center cluster was hard to read even with tilt..."
+    validations:
+      required: false
+  - type: textarea
+    id: winning_move
+    attributes:
+      label: Smart or decisive move
+      description: Describe one move that felt strategic.
+      placeholder: "The decisive move was..."
+    validations:
+      required: false
+  - type: textarea
+    id: attachments
+    attributes:
+      label: Attachments or saved history
+      description: Add screenshots or paste relevant saved session history snippets.
+    validations:
+      required: false
