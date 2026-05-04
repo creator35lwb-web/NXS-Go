@@ -19,6 +19,7 @@ from nxs_go_ai import (
     RandomAgent,
     SourceGuardAgent,
     TargetedCounterPressureAgent,
+    TacticalDefenseAgent,
     play_match,
 )
 
@@ -36,6 +37,8 @@ def build_agent(name: str, seed: int):
         return CounterRouteAgent()
     if name == "targeted":
         return TargetedCounterPressureAgent()
+    if name == "tactical":
+        return TacticalDefenseAgent()
     raise ValueError(f"unknown agent: {name}")
 
 
@@ -84,19 +87,19 @@ def run_series(
     }
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Run NXS-Go baseline agent benchmarks.")
-    parser.add_argument("--games", type=int, default=10)
-    parser.add_argument("--max-turns", type=int, default=40)
-    parser.add_argument(
-        "--map",
-        choices=MAP_VARIANTS + ("all",),
-        default="default",
-        help="Benchmark map variant.",
-    )
-    args = parser.parse_args()
-
-    matchups = [
+def build_matchups(suite: str) -> list[tuple[str, str]]:
+    if suite == "defense":
+        return [
+            ("bridge", "greedy"),
+            ("greedy", "bridge"),
+            ("counter", "greedy"),
+            ("greedy", "counter"),
+            ("targeted", "greedy"),
+            ("greedy", "targeted"),
+            ("tactical", "greedy"),
+            ("greedy", "tactical"),
+        ]
+    return [
         ("random", "greedy"),
         ("greedy", "random"),
         ("guard", "greedy"),
@@ -117,8 +120,32 @@ def main() -> None:
         ("bridge", "targeted"),
         ("targeted", "counter"),
         ("counter", "targeted"),
+        ("tactical", "greedy"),
+        ("greedy", "tactical"),
+        ("tactical", "bridge"),
+        ("bridge", "tactical"),
     ]
 
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Run NXS-Go baseline agent benchmarks.")
+    parser.add_argument("--games", type=int, default=10)
+    parser.add_argument("--max-turns", type=int, default=40)
+    parser.add_argument(
+        "--suite",
+        choices=("all", "defense"),
+        default="all",
+        help="Benchmark matchup suite.",
+    )
+    parser.add_argument(
+        "--map",
+        choices=MAP_VARIANTS + ("all",),
+        default="default",
+        help="Benchmark map variant.",
+    )
+    args = parser.parse_args()
+
+    matchups = build_matchups(args.suite)
     maps = MAP_VARIANTS if args.map == "all" else (args.map,)
     for map_variant in maps:
         for signal_name, noise_name in matchups:

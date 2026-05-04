@@ -4,6 +4,8 @@ NXS-Go now includes a small formal environment for bots, agents, and future self
 
 The arena is intentionally simple. It wraps the same `Game` rule engine used by the Pygame prototype instead of creating a second rule implementation.
 
+AI Arena rollouts disable undo/history recording and use lightweight state cloning so CPU-only machines can run focused benchmarks without needing GPU acceleration.
+
 ## Interface
 
 `nxs_go_ai.py` exposes:
@@ -21,6 +23,7 @@ The arena is intentionally simple. It wraps the same `Game` rule engine used by 
 - `BridgeGuardAgent`
 - `CounterRouteAgent`
 - `TargetedCounterPressureAgent`
+- `TacticalDefenseAgent`
 - `play_match(...)`
 
 ## Example
@@ -39,11 +42,13 @@ Run the baseline benchmark:
 python scripts\benchmark_agents.py --games 5 --max-turns 30
 ```
 
-Run all benchmark map variants:
+Run a focused defense-vs-greedy geometry probe:
 
 ```powershell
-python scripts\benchmark_agents.py --map all --games 2 --max-turns 60
+python scripts\benchmark_agents.py --suite defense --map contested_lanes --games 1 --max-turns 60
 ```
+
+Use `--map all` for broader sweeps, but expect 60-turn all-map runs to take longer as the map library grows.
 
 See `docs/AI_BENCHMARKS.md` for early results.
 
@@ -60,6 +65,8 @@ Current hypothesis under test:
 The current follow-up hypothesis is whether active counter-routing can outperform bridge holding under the 60-turn horizon.
 
 The latest hypothesis is Targeted Counter-Pressure: defend by routing into opponent pressure sources.
+
+The current search-layer hypothesis is Tactical Defense: use one-ply capture, pressure, and connectivity detection before adding new rules.
 
 ## Why This Exists
 

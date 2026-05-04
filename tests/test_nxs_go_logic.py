@@ -19,6 +19,7 @@ from nxs_go_ai import (
     NXSGoEnv,
     RandomAgent,
     TargetedCounterPressureAgent,
+    TacticalDefenseAgent,
     play_match,
 )
 
@@ -161,6 +162,17 @@ class NxsGoLogicTests(unittest.TestCase):
         self.assertEqual(result.observation["current_player"], PLAYER_NOISE)
         self.assertEqual(len(result.observation["nodes"]), 3)
 
+    def test_ai_env_disables_undo_history_recording(self):
+        env = NXSGoEnv()
+        env.reset()
+        action = next(action for action in env.legal_actions() if action["type"] == ACTION_SYNCH)
+
+        env.step(action)
+
+        self.assertFalse(env.game.record_undo)
+        self.assertFalse(env.game.record_history)
+        self.assertEqual(env.game.undo_stack, [])
+
     def test_greedy_agent_returns_legal_action(self):
         env = NXSGoEnv()
         env.reset()
@@ -186,6 +198,13 @@ class NxsGoLogicTests(unittest.TestCase):
         env = NXSGoEnv()
         env.reset()
         action = TargetedCounterPressureAgent().choose_action(env)
+
+        self.assertIn(action, env.legal_actions())
+
+    def test_tactical_defense_agent_returns_legal_action(self):
+        env = NXSGoEnv(map_variant="contested_lanes")
+        env.reset()
+        action = TacticalDefenseAgent().choose_action(env)
 
         self.assertIn(action, env.legal_actions())
 

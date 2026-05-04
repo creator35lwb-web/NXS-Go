@@ -109,6 +109,12 @@ Run a small baseline benchmark:
 python scripts\benchmark_agents.py --games 5 --max-turns 30
 ```
 
+Run a focused defense-vs-greedy geometry probe:
+
+```powershell
+python scripts\benchmark_agents.py --suite defense --map contested_lanes --games 1 --max-turns 60
+```
+
 The current AI hypothesis is whether bridge-aware defense can contest greedy isolation pressure.
 
 Turn-limit benchmark games include structural score leaders so experiments still produce evidence when no Source is isolated.
@@ -116,6 +122,12 @@ Turn-limit benchmark games include structural score leaders so experiments still
 Current follow-up: `CounterRouteAgent` tests whether active defensive routing can contest greedy isolation better than passive bridge holding.
 
 Latest hypothesis: `TargetedCounterPressureAgent` tests whether defense improves by routing into opponent pressure sources.
+
+Current geometry finding: `contested_lanes` sharply reduces GreedyIsolation's horizon margin, suggesting defense is partly geometry/search dependent.
+
+Current search finding: `TacticalDefenseAgent` improves some map margins but does not yet convert defensive positions into wins.
+
+The AI Arena is designed for CPU-first development. Focused benchmarks do not require a GPU.
 
 ## Project Docs
 

@@ -15,6 +15,10 @@
 - Added 2.5D depth-field board rendering to improve network readability.
 - Added adjustable tilt controls and route hover inspection for dense clusters.
 - Added AI Arena map variants for geometry/search experiments.
+- Added contested-lane, forked-bridge, and center-cross benchmark maps.
+- Added a focused benchmark `--suite defense` option.
+- Added TacticalDefense one-ply search agent and benchmark notes.
+- Optimized AI Arena rollouts by disabling undo/history recording and using lightweight state cloning.
 
 ## v0.1-A Public Baseline
 

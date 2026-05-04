@@ -8,10 +8,12 @@ The benchmark runner is intentionally small:
 python scripts\benchmark_agents.py --games 5 --max-turns 30
 ```
 
+The AI Arena is optimized for CPU-only development: benchmark rollouts disable undo/history recording and clone only the state needed by agents.
+
 Use `--map` to run geometry variants:
 
 ```powershell
-python scripts\benchmark_agents.py --map all --games 2 --max-turns 60
+python scripts\benchmark_agents.py --suite defense --map contested_lanes --games 1 --max-turns 60
 ```
 
 Current map variants:
@@ -19,6 +21,11 @@ Current map variants:
 - `default`: current baseline.
 - `wide_sources`: Sources start farther apart.
 - `neutral_bridge`: seeded middle bridge structure for early interaction.
+- `contested_lanes`: two offset center lanes that give both sides early bridge pressure.
+- `forked_bridges`: split source branches that test whether redundant paths improve defense.
+- `center_cross`: crossed center pressure shape that tests route readability and bridge contention.
+
+Use `--map all` for broader sweeps, but 60-turn runs across every map can take several minutes because defensive games often reach horizon scoring.
 
 For games that hit the turn limit, the runner reports structural score leaders and Signal-vs-Noise margin so a draw-like result still carries evidence.
 
@@ -32,6 +39,7 @@ When the built-in horizon is reached, the runner also reports `winner_reasons` s
 - `BridgeGuardAgent`: evaluates candidate actions around critical owned bridges and pressured friendly nodes.
 - `CounterRouteAgent`: extends BridgeGuard by prioritizing routes outward from pressured owned nodes.
 - `TargetedCounterPressureAgent`: routes into opponent nodes that are generating pressure.
+- `TacticalDefenseAgent`: adds one-ply capture, pressure, and connectivity detection on top of bridge defense.
 
 ## First Baseline Run
 
@@ -283,3 +291,89 @@ Interpretation:
 Next geometry/search question:
 
 > Do we need richer benchmark maps with contested neutral-like bridge lanes, or is the current route/defense action space too weak?
+
+## Contested Geometry Probe
+
+Change:
+
+- Added richer benchmark maps:
+  - `contested_lanes`
+  - `forked_bridges`
+  - `center_cross`
+- Added `--suite defense` to the benchmark runner for focused defensive probes.
+
+Focused command:
+
+```powershell
+python -c "from nxs_go_ai import BridgeGuardAgent, CounterRouteAgent, TargetedCounterPressureAgent, GreedyIsolationAgent, play_match; maps=('contested_lanes','forked_bridges','center_cross'); agents=(('bridge',BridgeGuardAgent),('counter',CounterRouteAgent),('targeted',TargetedCounterPressureAgent));\
+for m in maps:\
+    print('MAP',m);\
+    for name,cls in agents:\
+        r=play_match(cls(), GreedyIsolationAgent(), max_turns=60, map_variant=m); print(name,'vs greedy','winner=',r['winner'],'reason=',r['winner_reason'],'turns=',r['turns'],'margin=',r['evaluation']['margin'])"
+```
+
+Result summary:
+
+| Map | Bridge vs Greedy | Counter vs Greedy | Targeted vs Greedy |
+| --- | --- | --- | --- |
+| `contested_lanes` | Noise by horizon, margin -0.8 | Noise by horizon, margin -4.8 | Noise by horizon, margin -0.8 |
+| `forked_bridges` | Noise by horizon, margin -8.4 | Noise by horizon, margin -13.6 | Noise by horizon, margin -8.4 |
+| `center_cross` | Noise by horizon, margin -8.4 | Noise by horizon, margin -6.8 | Noise by horizon, margin -8.4 |
+
+Interpretation:
+
+- `contested_lanes` materially reduced GreedyIsolation's structural margin against BridgeGuard and TargetedCounterPressure.
+- Greedy still won by horizon scoring, but the margin moved from roughly -10.8/-12.8 on baseline maps to -0.8 on the best contested-lane cases.
+- This suggests defensive weakness is at least partly geometry/search dependent.
+- `forked_bridges` and `center_cross` did not improve defense enough in this probe.
+
+Next search question:
+
+> Can a one-ply capture/pressure detector convert the near-even `contested_lanes` positions into actual defensive wins without adding new rules?
+
+## Tactical Defense Probe
+
+Hypothesis:
+
+> A one-ply tactical detector can convert near-even defensive positions into wins by noticing immediate captures, pressure targets, and Source-connectivity swings.
+
+Implementation:
+
+- Added `TacticalDefenseAgent`.
+- Added the agent to the focused `--suite defense` benchmark.
+- The agent scores:
+  - immediate structural reward
+  - owned Source connectivity
+  - enemy Source connectivity
+  - live-node swing
+  - immediate capture targets
+  - opponent immediate capture targets
+  - pressured friendly nodes
+
+Focused command:
+
+```powershell
+python -c "from nxs_go_ai import TacticalDefenseAgent, GreedyIsolationAgent, play_match; maps=('contested_lanes','forked_bridges','center_cross');\
+for m in maps:\
+    r=play_match(TacticalDefenseAgent(),GreedyIsolationAgent(),max_turns=60,map_variant=m); print(m,'tactical vs greedy','winner=',r['winner'],'reason=',r['winner_reason'],'turns=',r['turns'],'margin=',r['evaluation']['margin']);\
+    r=play_match(GreedyIsolationAgent(),TacticalDefenseAgent(),max_turns=60,map_variant=m); print(m,'greedy vs tactical','winner=',r['winner'],'reason=',r['winner_reason'],'turns=',r['turns'],'margin=',r['evaluation']['margin'])"
+```
+
+Result summary:
+
+| Map | Tactical vs Greedy | Greedy vs Tactical |
+| --- | --- | --- |
+| `contested_lanes` | Noise by horizon, margin -0.8 | Signal by horizon, margin 1.2 |
+| `forked_bridges` | Noise by horizon, margin -6.4 | Noise by horizon, margin -9.2 |
+| `center_cross` | Noise by horizon, margin -0.8 | Noise by horizon, margin -9.2 |
+
+Interpretation:
+
+- Tactical Defense did not turn near-even positions into defensive wins.
+- It matched the best `contested_lanes` defense result.
+- It improved `center_cross` defense from the previous Bridge/Targeted margin of -8.4 to -0.8 when Tactical played Signal.
+- It did not solve second-player/Noise-side weakness on `forked_bridges` or `center_cross`.
+
+Design implication:
+
+> Search helps, but one-ply tactical awareness is not enough. The next evidence gate should test either deeper search or a minimal defensive rule, with human readability checked in parallel.

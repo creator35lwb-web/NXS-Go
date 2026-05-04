@@ -105,6 +105,8 @@ class Game:
         self.history: list[str] = []
         self.undo_stack: list[dict[str, object]] = []
         self.saved_history_path: str | None = None
+        self.record_undo = True
+        self.record_history = True
         self._seed_sources()
 
     def _seed_sources(self) -> None:
@@ -379,6 +381,8 @@ class Game:
         self.log = self.log[-7:]
 
     def add_event(self, summary: str, explanation: str) -> None:
+        if not self.record_history:
+            return
         self.add_log(summary)
         self.history.append(f"{summary} {explanation}")
         self.history = self.history[-40:]
@@ -422,6 +426,8 @@ class Game:
         }
 
     def save_undo_state(self) -> None:
+        if not self.record_undo:
+            return
         self.undo_stack.append(
             {
                 "nodes": copy.deepcopy(self.nodes),
