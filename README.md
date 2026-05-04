@@ -27,6 +27,13 @@ Advanced asymmetry such as Signal Amplify and Noise Ghost Node is intentionally 
 
 ## Quick Start
 
+Clone the repo:
+
+```powershell
+git clone https://github.com/creator35lwb-web/NXS-Go
+cd NXS-Go
+```
+
 Install dependencies:
 
 ```powershell
@@ -78,6 +85,8 @@ NXS-Go needs human competition feedback before broad AI-agent review.
 Run a local hotseat best-of-3 set, then open a GitHub issue with the **Human Playtest Feedback** template.
 
 See `docs/HUMAN_PLAYTEST.md`.
+
+Best feedback includes a saved history file from `history/`, a screenshot of a confusing board state, and whether both players wanted a rematch.
 
 ## Winning Pattern
 

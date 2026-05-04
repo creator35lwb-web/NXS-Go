@@ -12,7 +12,15 @@ body:
     attributes:
       label: Version or commit
       description: Paste the commit hash or describe when you downloaded the repo.
-      placeholder: "Example: main at 355e1ec"
+      placeholder: "Example: main on 2026-05-05"
+    validations:
+      required: false
+  - type: input
+    id: environment
+    attributes:
+      label: Operating system
+      description: Tell us where you ran the local prototype.
+      placeholder: "Example: Windows 11, Python 3.13"
     validations:
       required: false
   - type: dropdown
@@ -73,3 +81,14 @@ body:
       description: Add screenshots or paste relevant saved session history snippets.
     validations:
       required: false
+  - type: checkboxes
+    id: checklist
+    attributes:
+      label: Playtest checklist
+      options:
+        - label: I played at least one full match or reached horizon scoring.
+          required: false
+        - label: I used event history (`E`) when something was confusing.
+          required: false
+        - label: I saved or can describe the decisive sequence.
+          required: false
