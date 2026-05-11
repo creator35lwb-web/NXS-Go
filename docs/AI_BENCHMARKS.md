@@ -377,3 +377,43 @@ Interpretation:
 Design implication:
 
 > Search helps, but one-ply tactical awareness is not enough. The next evidence gate should test either deeper search or a minimal defensive rule, with human readability checked in parallel.
+
+## XV CIO Live Benchmark — May 11, 2026
+
+Command:
+
+```powershell
+python scripts/benchmark_agents.py --games 3 --max-turns 60
+```
+
+New finding not previously documented:
+
+| Matchup | Winner | Avg Turns | Avg Margin | Reason |
+| --- | --- | --- | --- | --- |
+| Tactical Signal vs Greedy Noise | Noise | 60.0 | -1.2 | horizon scoring |
+| **Greedy Signal vs Tactical Noise** | **Noise** | **60.0** | **-9.2** | **horizon scoring** |
+| Tactical Signal vs Bridge Noise | Signal | 60.0 | +28.0 | horizon scoring |
+| Bridge Signal vs Tactical Noise | Noise | 60.0 | -32.0 | horizon scoring |
+
+**Critical finding:** When `TacticalDefenseAgent` plays as Noise (second player) against `GreedyIsolationAgent` as Signal, **Noise wins** with a structural margin of -9.2 in favour of Noise. This is the first recorded instance of any defensive agent defeating GreedyIsolation in the benchmark record.
+
+This result is asymmetric — TacticalDefense does not beat Greedy when playing as Signal (first player). This suggests:
+
+1. Turn order (first vs second player) materially affects the attack-defense balance.
+2. One-ply tactical search is sufficient for second-player defensive wins but not first-player wins.
+3. Before adding asymmetric abilities, test whether a two-ply or MCTS agent can produce first-player defensive wins.
+
+**Contested lanes defense suite (games=2, max-turns=60):**
+
+| Matchup | Winner | Avg Margin |
+| --- | --- | --- |
+| Bridge vs Greedy (contested_lanes) | Noise | -0.8 |
+| Greedy vs Bridge (contested_lanes) | Signal | +1.2 |
+| Tactical vs Greedy (contested_lanes) | Noise | -0.8 |
+| Greedy vs Tactical (contested_lanes) | Signal | +1.2 |
+
+`contested_lanes` reduced the Greedy structural margin from -10.8 (default) to -0.8 — an 87% reduction. Geometry is the single most impactful variable tested so far. Recommend making `contested_lanes` the default benchmark map for future defense probes.
+
+**XV Recommendation:** Test two-ply search agent on `contested_lanes` before adding Signal Amplify (v0.4). The attack-defense cycle may be solvable within the current rule set at greater search depth.
+
+*Benchmarks run by XV (Perplexity CIO) — MACP v2.2 "Identity" — 2026-05-11*
