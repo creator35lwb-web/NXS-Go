@@ -6,6 +6,7 @@ from pathlib import Path
 from nxs_go import (
     ACTION_ROUTE,
     ACTION_SYNCH,
+    BOARD_BOTTOM,
     Game,
     HORIZON_TURNS,
     PLAYER_NOISE,
@@ -42,6 +43,14 @@ class NxsGoLogicTests(unittest.TestCase):
         self.assertTrue(ok)
         self.assertFalse(far_ok)
         self.assertIn("living network", reason)
+
+    def test_synch_rejects_status_panel_position(self):
+        game = Game()
+
+        ok, reason = game.valid_synch_position(150, BOARD_BOTTOM, PLAYER_SIGNAL)
+
+        self.assertFalse(ok)
+        self.assertIn("status panel", reason)
 
     def test_synch_adds_node_and_edges(self):
         game = Game()
@@ -172,6 +181,56 @@ class NxsGoLogicTests(unittest.TestCase):
         self.assertFalse(env.game.record_undo)
         self.assertFalse(env.game.record_history)
         self.assertEqual(env.game.undo_stack, [])
+
+    def test_ai_env_rejects_route_from_unowned_endpoint(self):
+        env = NXSGoEnv()
+        env.reset()
+        env.step({"type": ACTION_SYNCH, "x": 250, "y": 380})
+        invalid_route = {
+            "type": ACTION_ROUTE,
+            "a": 0,
+            "b": 2,
+            "from_id": 2,
+            "to_id": 0,
+        }
+
+        result = env.step(invalid_route)
+
+        self.assertEqual(result.info["error"], "invalid_edge")
+        edge = env.game.edges[0]
+        self.assertIsNone(edge.route_owner)
+        self.assertEqual(env.game.current_player, PLAYER_NOISE)
+
+    def test_ai_env_rejects_route_with_non_endpoint_target(self):
+        env = NXSGoEnv()
+        env.reset()
+        env.step({"type": ACTION_SYNCH, "x": 250, "y": 380})
+        invalid_route = {
+            "type": ACTION_ROUTE,
+            "a": 0,
+            "b": 2,
+            "from_id": 0,
+            "to_id": 999,
+        }
+
+        result = env.step(invalid_route)
+
+        self.assertEqual(result.info["error"], "invalid_edge")
+        edge = env.game.edges[0]
+        self.assertIsNone(edge.route_owner)
+        self.assertEqual(env.game.current_player, PLAYER_NOISE)
+
+    def test_ai_env_synch_actions_stay_out_of_status_panel(self):
+        env = NXSGoEnv()
+        env.reset()
+        synch_actions = [
+            action for action in env.legal_actions() if action["type"] == ACTION_SYNCH
+        ]
+
+        self.assertTrue(synch_actions)
+        self.assertTrue(
+            all(action["y"] <= BOARD_BOTTOM - 36 for action in synch_actions)
+        )
 
     def test_greedy_agent_returns_legal_action(self):
         env = NXSGoEnv()

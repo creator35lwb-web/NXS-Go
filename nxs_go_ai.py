@@ -9,6 +9,7 @@ from nxs_go import (
     ACTION_PULSE,
     ACTION_ROUTE,
     ACTION_SYNCH,
+    BOARD_BOTTOM,
     CONNECTION_RADIUS,
     HEIGHT,
     MIN_NODE_SPACING,
@@ -218,7 +219,7 @@ class NXSGoEnv:
         if kind == ACTION_SYNCH:
             self.game.synch(float(action["x"]), float(action["y"]))
         elif kind == ACTION_ROUTE:
-            edge = self._edge_by_key(int(action["a"]), int(action["b"]))
+            edge = self._valid_route_edge(action, actor)
             if edge is None:
                 info["error"] = "invalid_edge"
             else:
@@ -251,7 +252,7 @@ class NXSGoEnv:
                 x = node.x + (CONNECTION_RADIUS - 18) * math.cos(angle)
                 y = node.y + (CONNECTION_RADIUS - 18) * math.sin(angle)
                 x = max(MIN_NODE_SPACING, min(WIDTH - MIN_NODE_SPACING, x))
-                y = max(80, min(HEIGHT - MIN_NODE_SPACING, y))
+                y = max(80, min(BOARD_BOTTOM - MIN_NODE_SPACING, y))
                 key = (round(x), round(y))
                 if key in seen:
                     continue
@@ -300,6 +301,31 @@ class NXSGoEnv:
             if tuple(sorted((edge.a, edge.b))) == target:
                 return edge
         return None
+
+    def _valid_route_edge(self, action: Action, actor: str) -> Edge | None:
+        try:
+            a = int(action["a"])
+            b = int(action["b"])
+            from_id = int(action["from_id"])
+            to_id = int(action["to_id"])
+        except (KeyError, TypeError, ValueError):
+            return None
+
+        edge = self._edge_by_key(a, b)
+        if edge is None:
+            return None
+        if {from_id, to_id} != {edge.a, edge.b}:
+            return None
+        if from_id == to_id:
+            return None
+
+        from_node = self.game.node_by_id(from_id)
+        to_node = self.game.node_by_id(to_id)
+        if not from_node.active or not to_node.active:
+            return None
+        if from_node.owner != actor:
+            return None
+        return edge
 
     def _score(self, player: str) -> float:
         return self.evaluate_player(player)

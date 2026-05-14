@@ -161,6 +161,8 @@ class Game:
             return False, "Game is already complete."
         if y < 70:
             return False, "Keep nodes below the command bar."
+        if y > BOARD_BOTTOM - NODE_RADIUS:
+            return False, "Keep nodes above the status panel."
         for node in self.active_nodes():
             if distance((x, y), node.pos) < MIN_NODE_SPACING:
                 return False, "Too close to an existing node."
