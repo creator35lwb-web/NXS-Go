@@ -22,6 +22,7 @@
 - Added human playtest guide and GitHub playtest feedback issue template.
 - Clarified human playtest setup, solo fallback, and feedback checklist.
 - Added MACP v2.2 XV <-> G0 collaboration protocol for external AI analysis handoffs.
+- Fixed ROUTE so completed games cannot advance beyond horizon scoring.
 
 ## v0.1-A Public Baseline
 

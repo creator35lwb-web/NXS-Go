@@ -190,6 +190,10 @@ class Game:
         self.after_action()
 
     def route_at(self, x: float, y: float) -> None:
+        if self.winner:
+            self.set_message("Game is already complete.", error=True)
+            return
+
         edge = self.edge_at(x, y)
         if edge is None:
             self.set_message("ROUTE must target an edge.", error=True)

@@ -75,6 +75,21 @@ class NxsGoLogicTests(unittest.TestCase):
         self.assertEqual(edge.from_id, 0)
         self.assertEqual(edge.to_id, 2)
 
+    def test_route_rejects_completed_game(self):
+        game = Game()
+        game.synch(250, 380)
+        game.current_player = PLAYER_SIGNAL
+        game.selected_action = ACTION_ROUTE
+        game.winner = PLAYER_SIGNAL
+        turn_count = game.turn_count
+
+        game.route_at(200, 380)
+
+        edge = game.edges[0]
+        self.assertIsNone(edge.route_owner)
+        self.assertEqual(game.turn_count, turn_count)
+        self.assertEqual(game.message, "Game is already complete.")
+
     def test_pulse_captures_overloaded_node(self):
         game = Game()
         victim = game.add_node(250, 380, PLAYER_NOISE)
