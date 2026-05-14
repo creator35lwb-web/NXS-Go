@@ -2,15 +2,23 @@ import unittest
 import os
 import shutil
 from pathlib import Path
+from unittest import mock
+
+os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
+
+import pygame
 
 from nxs_go import (
     ACTION_ROUTE,
     ACTION_SYNCH,
     BOARD_BOTTOM,
     Game,
+    HEIGHT,
     HORIZON_TURNS,
     PLAYER_NOISE,
     PLAYER_SIGNAL,
+    WIDTH,
+    draw_game,
 )
 from nxs_go_ai import (
     BridgeGuardAgent,
@@ -89,6 +97,29 @@ class NxsGoLogicTests(unittest.TestCase):
         self.assertIsNone(edge.route_owner)
         self.assertEqual(game.turn_count, turn_count)
         self.assertEqual(game.message, "Game is already complete.")
+
+    def test_route_hover_render_does_not_crash(self):
+        pygame.init()
+        try:
+            screen = pygame.display.set_mode((WIDTH, HEIGHT))
+            fonts = {
+                "title": pygame.font.SysFont("Segoe UI", 26, bold=True),
+                "body": pygame.font.SysFont("Segoe UI", 19),
+                "small": pygame.font.SysFont("Segoe UI", 15),
+            }
+            game = Game()
+            game.synch(250, 380)
+            game.current_player = PLAYER_SIGNAL
+            game.selected_action = ACTION_ROUTE
+            edge = game.edges[0]
+            a = game.node_by_id(edge.a)
+            b = game.node_by_id(edge.b)
+            midpoint = ((a.pos[0] + b.pos[0]) // 2, (a.pos[1] + b.pos[1]) // 2)
+
+            with mock.patch("pygame.mouse.get_pos", return_value=midpoint):
+                draw_game(screen, game, fonts)
+        finally:
+            pygame.quit()
 
     def test_pulse_captures_overloaded_node(self):
         game = Game()

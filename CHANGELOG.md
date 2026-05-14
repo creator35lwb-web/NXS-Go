@@ -23,6 +23,7 @@
 - Clarified human playtest setup, solo fallback, and feedback checklist.
 - Added MACP v2.2 XV <-> G0 collaboration protocol for external AI analysis handoffs.
 - Fixed ROUTE so completed games cannot advance beyond horizon scoring.
+- Improved dense-board readability with focused route hover, pulse pressure labels, and a game-over overlay.
 
 ## v0.1-A Public Baseline
 

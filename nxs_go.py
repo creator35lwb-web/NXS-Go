@@ -620,8 +620,10 @@ def draw_game(screen: pygame.Surface, game: Game, fonts: dict[str, pygame.font.F
     screen.fill(BG)
     draw_top_bar(screen, game, fonts)
     draw_depth_field(screen, game)
-    draw_graph(screen, game)
+    draw_graph(screen, game, fonts)
     draw_status_panel(screen, game, fonts)
+    if game.winner:
+        draw_game_over_overlay(screen, game, fonts)
     if game.show_help:
         draw_help_overlay(screen, game, fonts)
     if game.show_history:
@@ -639,7 +641,8 @@ def draw_top_bar(screen: pygame.Surface, game: Game, fonts: dict[str, pygame.fon
         (185, 17),
         GOLD,
     )
-    draw_text(screen, fonts["small"], f"{game.current_player}'s move", (22, 48), color)
+    turn_label = "Game complete" if game.winner else f"{game.current_player}'s move"
+    draw_text(screen, fonts["small"], turn_label, (22, 48), color)
     draw_text(screen, fonts["small"], game.message, (185, 43), MUTED)
 
     for idx, action in enumerate(ACTIONS):
@@ -651,9 +654,15 @@ def draw_top_bar(screen: pygame.Surface, game: Game, fonts: dict[str, pygame.fon
     draw_button(screen, fonts["small"], pulse_rect, "SPACE", game.selected_action == ACTION_PULSE)
 
 
-def draw_graph(screen: pygame.Surface, game: Game) -> None:
+def draw_graph(
+    screen: pygame.Surface,
+    game: Game,
+    fonts: dict[str, pygame.font.Font],
+) -> None:
     mouse_pos = pygame.mouse.get_pos()
     hovered_edge = game.edge_at(*mouse_pos) if BOARD_TOP <= mouse_pos[1] <= BOARD_BOTTOM else None
+    focus_route = game.selected_action == ACTION_ROUTE and hovered_edge is not None
+    focus_pulse = game.selected_action == ACTION_PULSE
 
     for edge in sorted(game.edges, key=lambda item: edge_depth(game, item)):
         a = game.node_by_id(edge.a)
@@ -669,8 +678,16 @@ def draw_graph(screen: pygame.Surface, game: Game) -> None:
             (b.pos[0] + shadow_offset, b.pos[1] + shadow_offset),
             width + 2,
         )
-        color = EDGE_ACTIVE if edge.route_owner else EDGE
-        if edge == hovered_edge or route_edge_is_available(game, edge):
+        if focus_route and edge != hovered_edge and not edge.route_owner:
+            color = (39, 45, 58)
+        elif focus_pulse and edge.route_owner:
+            color = game.owner_color(edge.route_owner)
+        else:
+            color = EDGE_ACTIVE if edge.route_owner else EDGE
+        if edge == hovered_edge:
+            color = GOLD
+            width += 2
+        elif not focus_route and route_edge_is_available(game, edge):
             color = GOLD if edge == hovered_edge else depth_color(EDGE_ACTIVE, depth)
             width += 1
         pygame.draw.line(screen, depth_color(color, depth), a.pos, b.pos, width)
@@ -705,9 +722,17 @@ def draw_graph(screen: pygame.Surface, game: Game) -> None:
         pygame.draw.circle(screen, BG, node.pos, radius, 2)
         if node.is_source:
             pygame.draw.circle(screen, GOLD, node.pos, radius + 5, 2)
+        if game.selected_action == ACTION_PULSE and node.active:
+            incoming, defense = pulse_pressure(game, node.id, game.current_player)
+            if node.owner == other_player(game.current_player) and incoming > 0:
+                ring_color = VALID if incoming > defense else GOLD
+                pygame.draw.circle(screen, ring_color, node.pos, radius + 9, 2)
+                label = f"{incoming}>{defense}" if incoming > defense else f"{incoming}/{defense}"
+                label_surf = pygame.font.SysFont("Segoe UI", 13, bold=True).render(label, True, ring_color)
+                screen.blit(label_surf, (node.pos[0] - label_surf.get_width() // 2, node.pos[1] - radius - 24))
 
     if hovered_edge is not None:
-        draw_edge_inspector(screen, game, hovered_edge)
+        draw_edge_inspector(screen, game, fonts["small"], hovered_edge)
 
 
 def draw_status_panel(
@@ -800,7 +825,12 @@ def route_edge_is_available(game: Game, edge: Edge) -> bool:
     return a_node.owner == game.current_player or b_node.owner == game.current_player
 
 
-def draw_edge_inspector(screen: pygame.Surface, game: Game, edge: Edge) -> None:
+def draw_edge_inspector(
+    screen: pygame.Surface,
+    game: Game,
+    font: pygame.font.Font,
+    edge: Edge,
+) -> None:
     a = game.node_by_id(edge.a)
     b = game.node_by_id(edge.b)
     midpoint = ((a.pos[0] + b.pos[0]) // 2, (a.pos[1] + b.pos[1]) // 2)
@@ -808,6 +838,51 @@ def draw_edge_inspector(screen: pygame.Surface, game: Game, edge: Edge) -> None:
     pygame.draw.circle(screen, color, midpoint, 8, 2)
     pygame.draw.circle(screen, color, a.pos, depth_radius(NODE_RADIUS, visual_depth(game, node_depth(a))) + 7, 2)
     pygame.draw.circle(screen, color, b.pos, depth_radius(NODE_RADIUS, visual_depth(game, node_depth(b))) + 7, 2)
+    if game.selected_action == ACTION_ROUTE and route_edge_is_available(game, edge):
+        owned = [node for node in (a, b) if node.owner == game.current_player]
+        target = b if a in owned else a
+        if len(owned) == 1:
+            from_node = owned[0]
+            draw_arrow(screen, game.owner_color(game.current_player), from_node.pos, target.pos, width=5)
+            incoming, defense = pulse_pressure(game, target.id, game.current_player)
+            text = f"Route {from_node.id}->{target.id}  target pulse {incoming + 1}>{defense}"
+        else:
+            text = "Both endpoints owned. Click closer to choose route direction."
+        tooltip = pygame.Rect(0, 0, 360, 30)
+        tooltip.center = (midpoint[0], max(BOARD_TOP + 24, midpoint[1] - 34))
+        pygame.draw.rect(screen, (20, 25, 36), tooltip, border_radius=6)
+        pygame.draw.rect(screen, color, tooltip, 1, border_radius=6)
+        draw_text(screen, font, text, (tooltip.x + 10, tooltip.y + 7), TEXT)
+
+
+def pulse_pressure(game: Game, node_id: int, attacker: str) -> tuple[int, int]:
+    node = game.node_by_id(node_id)
+    defender = node.owner
+    incoming = sum(
+        1
+        for edge in game.edges
+        if edge.route_owner == attacker and edge.to_id == node_id
+    )
+    outgoing = sum(
+        1
+        for edge in game.edges
+        if edge.route_owner == defender and edge.from_id == node_id
+    )
+    return incoming, outgoing + (2 if node.is_source else 0)
+
+
+def draw_game_over_overlay(
+    screen: pygame.Surface,
+    game: Game,
+    fonts: dict[str, pygame.font.Font],
+) -> None:
+    card = pygame.Rect(WIDTH // 2 - 255, BOARD_TOP + 22, 510, 96)
+    pygame.draw.rect(screen, (20, 25, 36), card, border_radius=8)
+    pygame.draw.rect(screen, GOLD, card, 2, border_radius=8)
+    title = "No one wins" if game.winner == "No one" else f"{game.winner} wins"
+    draw_text(screen, fonts["body"], title, (card.x + 22, card.y + 17), GOLD)
+    draw_text(screen, fonts["small"], game.message, (card.x + 22, card.y + 47), TEXT)
+    draw_text(screen, fonts["small"], "Press S to save history or R to reset.", (card.x + 22, card.y + 69), MUTED)
 
 
 def draw_help_overlay(
